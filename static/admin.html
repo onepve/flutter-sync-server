@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CBox 管理面板</title>
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+/* ── 管理面板专属样式 ── */
+.page-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 24px 0; }
+
+/* 响应式表格 */
+.table-wrap { overflow-x: auto; }
+.table-wrap table { width: 100%; }
+.table-wrap th, .table-wrap td { white-space: nowrap; }
+
+/* 统计卡片响应式 */
+@media (max-width: 768px) {
+  .stats-grid-adm { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .stats-grid-adm { grid-template-columns: 1fr; }
+}
+
+/* 时间选择按钮组 */
+.time-btn-group { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.time-btn { padding: 5px 12px; font-size: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-main); cursor: pointer; transition: var(--transition); }
+.time-btn:hover { border-color: var(--primary-cyan); }
+.time-btn.active { background: var(--primary-cyan); color: #fff; border-color: var(--primary-cyan); }
+
+/* 带标签文字的拨动开关 */
+.toggle-labeled { display: flex; align-items: center; gap: 10px; }
+.toggle-labeled .toggle-label-left { font-size: 13px; color: var(--btn-danger); font-weight: 500; }
+.toggle-labeled .toggle-label-right { font-size: 13px; color: var(--accent-green); font-weight: 500; }
+
+/* 统计卡片 */
+.stats-grid-adm { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.stat-adm { background: var(--bg-card); border-radius: var(--radius-lg); padding: 18px 14px; text-align: center; border: 1px solid var(--border-light); transition: var(--transition); }
+.stat-adm .num { font-size: 28px; font-weight: 800; color: var(--primary-deep); line-height: 1.2; }
+.stat-adm .label { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+/* 用户表格操作按钮组 */
+.action-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.action-group button { font-size: 11px; padding: 3px 8px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--bg-card); cursor: pointer; transition: var(--transition); color: var(--text-main); }
+.action-group button:hover { background: var(--btn-bg); }
+.action-group .btn-lock { color: var(--btn-danger); }
+.action-group .btn-unlock { color: var(--accent-green); }
+.action-group .btn-delete { color: var(--btn-danger); font-weight: 600; }
+.action-group .btn-totp { color: var(--primary-cyan); }
+
+/* 邀请码表格 */
+.invite-code-text { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: var(--primary-deep); background: var(--primary-light); padding: 2px 6px; border-radius: var(--radius-sm); word-break: break-all; }
+
+/* 系统设置 */
+.settings-group { margin: 12px 0; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border-light); }
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 14px; color: var(--text-main); }
+.setting-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.setting-control { flex-shrink: 0; margin-left: 12px; }
+.setting-control input[type="number"] { width: 80px; text-align: center; }
+
+/* 下拉菜单 */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 140px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 100; padding: 4px 0; }
+.dropdown-menu.show { display: block; }
+.dropdown-item { padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--text-main); transition: var(--transition); }
+.dropdown-item:hover { background: var(--bg-hover); }
+.dropdown-item.danger { color: var(--btn-danger); }
+.dropdown-divider { height: 1px; background: var(--border-light); margin: 4px 0; }
+
+/* 日志条目 */
+.log-entry { padding: 8px 10px; border-bottom: 1px solid var(--border-light); font-size: 12px; display: flex; gap: 10px; align-items: flex-start; }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .log-time { color: var(--text-muted); white-space: nowrap; min-width: 140px; font-size: 11px; }
+.log-entry .log-user { color: var(--primary-cyan); font-weight: 600; white-space: nowrap; min-width: 80px; }
+.log-entry .log-action { color: var(--text-main); flex: 1; word-break: break-word; }
+.log-entry .log-detail { color: var(--text-light); }
+
+/* 弹窗内表单 */
+.modal input, .modal select { margin-bottom: 8px; }
+.modal .form-group { margin-bottom: 10px; }
+.modal .form-group label { font-size: 13px; color: var(--text-light); display: block; margin-bottom: 4px; }
+
+/* 页面计数脚标 */
+.page-info { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 4px; padding-bottom: 4px; }
+.page-info-inline { font-size: 12px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 13px; }
+
+/* 登录覆盖层 */
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+.login-screen .login-box { background: var(--bg-card); border-radius: var(--radius-xl); padding: 32px 28px; max-width: 380px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid rgba(74, 122, 140, 0.08); position: relative; }
+.login-screen .login-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-green), var(--primary-cyan), var(--primary-deep), var(--accent-earth)); border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
+.login-screen .login-box h2 { text-align: center; font-size: 18px; color: var(--primary-deep); margin-bottom: 20px; }
+.login-screen .login-box input { display: block; width: 100%; padding: 10px 14px; margin-bottom: 10px; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 14px; outline: none; background: var(--bg-page); color: var(--text-main); }
+.login-screen .login-box input:focus { border-color: var(--primary-cyan); box-shadow: 0 0 0 3px rgba(74, 122, 140, 0.10); }
+.login-screen .login-box .error { color: var(--btn-danger); font-size: 13px; margin-top: 8px; display: none; }
+.login-screen .login-box .login-footer { text-align: center; margin-top: 12px; font-size: 12px; }
+.login-screen .login-box .login-footer a { color: var(--primary-cyan); text-decoration: none; }
+
+/* 顶栏头像 */
+.topbar .avatar-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); transition: var(--transition); }
+.topbar .avatar-btn:hover { background: var(--btn-bg); }
+.topbar .avatar-btn img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.topbar .avatar-btn .avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--primary-cyan); font-weight: 600; }
+
+/* 搜索栏增强 */
+.search-bar-adv { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.search-bar-adv input { max-width: 200px; }
+.search-bar-adv select { max-width: 120px; }
+
+/* 操作反馈 */
+.action-msg { font-size: 12px; padding: 4px 0; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- ===== 登录页面 ===== -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <h2>管理员登录</h2>
+    <input type="text" id="login-user" placeholder="管理员用户名" autocomplete="username">
+    <input type="password" id="login-pass" placeholder="密码" autocomplete="current-password">
+    <input type="text" id="login-totp" placeholder="TOTP 验证码（未开启则留空）" autocomplete="off" maxlength="6">
+    <button class="btn btn-primary btn-block" onclick="login()">登录</button>
+    <div class="error" id="login-error"></div>
+    <div class="login-footer"><a href="/">← 返回首页</a></div>
+  </div>
+</div>
+
+<!-- ===== 主面板 ===== -->
+<div id="main-content" style="display:none;">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <a href="/">← 首页</a>
+    <span class="title">管理面板</span>
+    <div class="topbar-right">
+      <div class="dropdown" id="admin-dropdown">
+        <div class="avatar-btn" onclick="toggleDropdown()">
+          <span id="admin-avatar-area"><span class="avatar-placeholder" id="avatar-placeholder">管</span></span>
+          <span id="admin-name" style="font-size:13px;font-weight:500;color:var(--text-main);">加载中</span>
+        </div>
+        <div class="dropdown-menu" id="admin-dropdown-menu">
+          <div class="dropdown-item" onclick="openAdminProfileModal()">修改资料</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item danger" onclick="logout()">退出登录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- ===== 统计卡片 ===== -->
+    <div class="card">
+      <div class="section-title">系统概况</div>
+      <div class="stats-grid-adm" id="stats-grid">
+        <div class="stat-adm"><div class="num" id="stat-users">--</div><div class="label">总用户数</div></div>
+        <div class="stat-adm"><div class="num" id="stat-active">--</div><div class="label">今日活跃</div></div>
+        <div class="stat-adm"><div class="num" id="stat-data">--</div><div class="label">同步数据项</div></div>
+        <div class="stat-adm"><div class="num" id="stat-invites">--</div><div class="label">邀请码总数</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 标签页导航 ===== -->
+    <div class="card" style="padding:16px 20px;">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('users')">用户列表</div>
+        <div class="tab" onclick="switchTab('admin-invites')">管理员邀请码</div>
+        <div class="tab" onclick="switchTab('user-invites')">普通用户邀请码</div>
+        <div class="tab" onclick="switchTab('settings')">系统设置</div>
+        <div class="tab" onclick="switchTab('logs')">审计日志</div>
+        <div class="tab" onclick="switchTab('email-logs')">邮件日志</div>
+      </div>
+
+      <!-- ─── Tab: 用户管理 ─── -->
+      <div class="tab-content active" id="tab-users">
+        <div class="search-bar-adv">
+          <input type="text" id="user-search" placeholder="搜索用户名/邮箱..." onkeydown="if(event.key==='Enter')loadUsers()">
+          <button class="btn btn-primary btn-sm" onclick="loadUsers()">查询</button>
+          <select id="user-filter-status" onchange="loadUsers()">
+            <option value="">全部状态</option>
+            <option value="active">正常</option>
+            <option value="locked">已锁定</option>
+            <option value="admin">管理员</option>
+          </select>
+          <select id="user-sort" onchange="loadUsers()">
+            <option value="id">按ID排序</option>
+            <option value="username">按用户名</option>
+            <option value="created_at">按注册时间</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">刷新</button>
+          <span class="page-info-inline" id="user-page-info"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>ID</th><th>用户名</th><th>昵称</th><th>邮箱</th><th>身份</th><th>TOTP</th><th>状态</th><th>操作</th>
+            </tr></thead>
+            <tbody id="user-table-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="user-pagination"></div>
+      </div>
+
+      <!-- ─── Tab: 管理员邀请码 ─── -->
+      <div class="tab-content" id="tab-admin-invites">
+        <div class="search-bar-adv">
+          <input type="text" id="admin-invite-search" placeholder="搜索邀请码..." onkeydown="if(event.key==='Enter')loadAdminInvites()">
+          <button class="btn btn-primary btn-sm" onclick="loadAdminInvites()">查询</button>
+          <select id="admin-invite-filter-used" onchange="loadAdminInvites()">
+            <option value="">全部状态</option>
+            <option value="available">未使用</option>
+            <option value="used">已使用</option>
+            <option value="locked">已锁定</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="showCreateInvite()">创建邀请码</button>
+          <button class="btn btn-secondary btn-sm" onclick="showBatchInvite()">批量生成</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadAdminInvites()">刷新</button>
+          <span class="page-info-inline" id="admin-invite-page-info"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>邀请码</th><th>已使用/总次数</th><th>状态</th><th>过期时间</th><th>公开</th><th>操作</th>
+            </tr></thead>
+            <tbody id="admin-invite-table-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="admin-invite-pagination"></div>
+      </div>
+
+      <!-- ─── Tab: 普通用户邀请码 ─── -->
+      <div class="tab-content" id="tab-user-invites">
+        <div class="search-bar-adv">
+          <input type="text" id="user-invite-search" placeholder="搜索邀请码..." onkeydown="if(event.key==='Enter')loadUserInvites()">
+          <button class="btn btn-primary btn-sm" onclick="loadUserInvites()">查询</button>
+          <select id="user-invite-filter-used" onchange="loadUserInvites()">
+            <option value="">全部状态</option>
+            <option value="available">未使用</option>
+            <option value="used">已使用</option>
+            <option value="locked">已锁定</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="loadUserInvites()">刷新</button>
+          <span class="page-info-inline" id="user-invite-page-info"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>邀请码</th><th>创建者</th><th>已使用/总次数</th><th>状态</th><th>过期时间</th><th>操作</th>
+            </tr></thead>
+            <tbody id="user-invite-table-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="user-invite-pagination"></div>
+      </div>
+
+      <!-- ─── Tab: 系统设置 ─── -->
+      <div class="tab-content" id="tab-settings">
+        <div class="settings-group">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">注册需要邀请码</div>
+              <div class="setting-desc">开启后，新用户必须使用邀请码才能注册</div>
+            </div>
+            <div class="setting-control">
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfg-require-invite">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">允许用户创建邀请码</div>
+              <div class="setting-desc">开启后，普通用户可以自行创建邀请码</div>
+            </div>
+            <div class="setting-control">
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfg-allow-user-create">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">每用户最多邀请码数</div>
+              <div class="setting-desc">限制每个用户可创建的邀请码数量上限</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" id="cfg-max-invites" min="0" max="100" value="5">
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:12px;">
+          <button class="btn btn-primary" onclick="saveConfig()">保存设置</button>
+          <span id="config-save-msg" class="action-msg" style="margin-left:8px;"></span>
+        </div>
+      </div>
+
+      <!-- ─── Tab: 审计日志 ─── -->
+      <div class="tab-content" id="tab-logs">
+        <div class="search-bar-adv">
+          <input type="text" id="log-search" placeholder="搜索用户/操作..." onkeydown="if(event.key==='Enter')loadLogs()">
+          <button class="btn btn-primary btn-sm" onclick="loadLogs()">查询</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadLogs()">刷新</button>
+          <button class="btn btn-danger btn-sm" onclick="clearLogs()">清空日志</button>
+          <span class="page-info-inline" id="log-page-info"></span>
+        </div>
+        <div id="log-entries"></div>
+        <div class="pagination" id="log-pagination"></div>
+      </div>
+
+      <!-- ─── Tab: 邮件日志 ─── -->
+      <div class="tab-content" id="tab-email-logs">
+        <div class="search-bar-adv">
+          <input type="text" id="email-log-search" placeholder="搜索收件人或主题..." onkeydown="if(event.key==='Enter')loadEmailLogs()">
+          <button class="btn btn-primary btn-sm" onclick="loadEmailLogs()">查询</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadEmailLogs()">刷新</button>
+          <button class="btn btn-danger btn-sm" onclick="clearEmailLogs()">清空日志</button>
+          <span class="page-info-inline" id="email-log-page-info"></span>
+        </div>
+        <div id="email-log-entries"></div>
+        <div class="pagination" id="email-log-pagination"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-wrap -->
+</div><!-- /main-content -->
+
+<!-- ===== 创建邀请码弹窗 ===== -->
+<div class="modal-overlay" id="create-invite-modal">
+  <div class="modal">
+    <button class="close" onclick="closeModal('create-invite-modal')">x</button>
+    <h3>创建邀请码</h3>
+    <div class="form-group">
+      <label>有效次数</label>
+      <input type="number" id="create-invite-max-uses" value="1" min="1" max="999">
+    </div>
+    <div class="form-group">
+      <label>有效期天数</label>
+      <input type="number" id="create-invite-days" value="" min="1" max="3650" placeholder="输入天数，留空为永久" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>公开模式</label>
+      <div class="toggle-labeled">
+        <span class="toggle-label-left">非公开</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="create-invite-public">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label-right">公开</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>快速选择</label>
+      <div class="time-btn-group" id="create-invite-time-group">
+        <button class="time-btn" data-days="30">1个月</button>
+        <button class="time-btn" data-days="90">1季度</button>
+        <button class="time-btn" data-days="180">半年</button>
+        <button class="time-btn" data-days="365">1年</button>
+        <button class="time-btn active" data-days="0">永久</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>自定义过期日期</label>
+      <input type="date" id="create-invite-expire-date" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('create-invite-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="createInvite()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 批量生成弹窗 ===== -->
+<div class="modal-overlay" id="batch-invite-modal">
+  <div class="modal">
+    <button class="close" onclick="closeModal('batch-invite-modal')">x</button>
+    <h3>批量生成邀请码</h3>
+    <div class="form-group">
+      <label>数量</label>
+      <input type="number" id="batch-invite-count" value="5" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label>每码有效次数</label>
+      <input type="number" id="batch-invite-max-uses" value="1" min="1" max="999">
+    </div>
+    <div class="form-group">
+      <label>有效期天数</label>
+      <input type="number" id="batch-invite-days" value="" min="1" max="3650" placeholder="输入天数，留空为永久" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>快速选择</label>
+      <div class="time-btn-group" id="batch-invite-time-group">
+        <button class="time-btn" data-days="30">1个月</button>
+        <button class="time-btn" data-days="90">1季度</button>
+        <button class="time-btn" data-days="180">半年</button>
+        <button class="time-btn" data-days="365">1年</button>
+        <button class="time-btn active" data-days="0">永久</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>自定义过期日期</label>
+      <input type="date" id="batch-invite-expire-date" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('batch-invite-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="batchCreateInvite()">生成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 确认操作弹窗 ===== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:380px;">
+    <button class="close" onclick="closeModal('confirm-modal')">x</button>
+    <h3 id="confirm-title">确认操作</h3>
+    <p id="confirm-msg" style="font-size:13px;color:var(--text-light);margin-bottom:16px;"></p>
+    <div style="text-align:right;gap:8px;display:flex;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('confirm-modal')">取消</button>
+      <button class="btn btn-danger btn-sm" id="confirm-btn">确认</button>
+    </div>
+  </div>
+<!-- ===== 管理员资料弹窗 ===== -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal" style="max-width:520px;">
+    <button class="close" onclick="closeModal('profile-modal')">x</button>
+    <h3>修改资料</h3>
+
+    <!-- 头像上传 -->
+    <div class="form-group">
+      <label>头像</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <div id="profile-avatar-preview" style="width:48px;height:48px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--primary-cyan);font-weight:600;overflow:hidden;flex-shrink:0;">
+          管
+        </div>
+        <input type="file" id="profile-avatar-file" accept="image/*" style="font-size:12px;flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="updateAvatar()">上传</button>
+      </div>
+    </div>
+
+    <!-- 修改昵称 -->
+    <div class="form-group">
+      <label>昵称</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="profile-nickname" placeholder="输入新昵称" style="flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="saveNickname()">保存</button>
+      </div>
+    </div>
+
+    <!-- 修改邮箱 -->
+    <div class="form-group">
+      <label>邮箱</label>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+        <span id="profile-email-current" style="font-size:13px;color:var(--text-muted);"></span>
+      </div>
+      <input type="email" id="profile-new-email" placeholder="新邮箱地址" style="margin-bottom:4px;">
+      <input type="password" id="profile-email-password" placeholder="输入密码确认">
+      <button class="btn btn-primary btn-sm" onclick="saveEmail()" style="margin-top:4px;">保存邮箱</button>
+    </div>
+
+    <!-- 修改用户名 -->
+    <div class="form-group">
+      <label>用户名</label>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+        <span id="profile-username-current" style="font-size:13px;color:var(--text-muted);"></span>
+      </div>
+      <input type="text" id="profile-new-username" placeholder="新用户名" style="margin-bottom:4px;">
+      <input type="password" id="profile-username-password" placeholder="输入密码确认">
+      <button class="btn btn-primary btn-sm" onclick="saveUsername()" style="margin-top:4px;">保存用户名</button>
+    </div>
+
+    <!-- 修改密码 -->
+    <div class="form-group">
+      <label>修改密码</label>
+      <input type="password" id="profile-old-password" placeholder="当前密码" style="margin-bottom:4px;">
+      <input type="password" id="profile-new-password" placeholder="新密码" style="margin-bottom:4px;">
+      <input type="password" id="profile-confirm-password" placeholder="确认新密码">
+      <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-top:4px;">修改密码</button>
+    </div>
+
+    <!-- TOTP 双因素认证 -->
+    <div class="form-group">
+      <label>双因素认证（TOTP）</label>
+      <div id="profile-totp-section">
+        <div id="profile-totp-status" style="font-size:13px;color:var(--text-muted);margin-bottom:6px;"></div>
+        <div id="profile-totp-actions">
+          <button class="btn btn-primary btn-sm" id="profile-totp-setup-btn" onclick="setupTotp()" style="display:none;">开启 TOTP</button>
+          <button class="btn btn-secondary btn-sm" id="profile-totp-reconfig-btn" onclick="reconfigTotp()" style="display:none;">重新配置 TOTP</button>
+          <button class="btn btn-danger btn-sm" id="profile-totp-disable-btn" onclick="disableTotp()" style="display:none;">关闭 TOTP</button>
+        </div>
+        <div id="profile-totp-setup-area" style="display:none;margin-top:8px;">
+          <div id="profile-totp-qrcode" style="text-align:center;margin-bottom:8px;"></div>
+          <div id="profile-totp-secret" style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px;word-break:break-all;"></div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="profile-totp-code" placeholder="输入6位验证码" maxlength="6" style="flex:1;">
+            <button class="btn btn-primary btn-sm" onclick="verifyTotpSetup()">验证</button>
+          </div>
+        </div>
+        <div id="profile-totp-disable-area" style="display:none;margin-top:8px;">
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="profile-totp-disable-code" placeholder="输入TOTP验证码" maxlength="6" style="flex:1;">
+            <button class="btn btn-danger btn-sm" onclick="confirmDisableTotp()">确认关闭</button>
+          </div>
+        </div>
+        <div id="profile-totp-recovery" style="display:none;margin-top:8px;padding:10px;background:var(--primary-light);border-radius:var(--radius-sm);">
+          <div style="font-size:13px;font-weight:600;color:var(--primary-deep);margin-bottom:4px;">重要：请保存以下恢复密钥</div>
+          <div id="profile-totp-recovery-keys" style="font-size:12px;color:var(--text-main);word-break:break-all;font-family:monospace;"></div>
+          <button class="btn btn-primary btn-sm" onclick="closeProfileTotpRecovery()" style="margin-top:6px;">我已保存</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== 管理员协助绑定 TOTP 弹窗 ===== -->
+<div class="modal-overlay" id="totp-bind-modal">
+  <div class="modal" style="max-width:420px;">
+    <button class="close" onclick="closeModal('totp-bind-modal')">x</button>
+    <h3>协助绑定 TOTP</h3>
+    <div id="totp-bind-content">
+      <div id="totp-bind-qrcode" style="text-align:center;margin-bottom:8px;"></div>
+      <div id="totp-bind-secret" style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px;word-break:break-all;"></div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:8px;">让用户使用 TOTP 应用扫描上方二维码或输入密钥，然后输入用户设备上显示的验证码：</div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="totp-bind-code" placeholder="输入6位验证码" maxlength="6" style="flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="adminTotpBindConfirm()">确认绑定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+// 管理面板 JavaScript
+// ===================================================================
+
+const API_BASE = window.location.origin + '/api';
+let TOKEN = localStorage.getItem('sync_token');
+let ADMIN_PROFILE = null;
+let userPage = 1, adminInvitePage = 1, userInvitePage = 1, logPage = 1, emailLogPage = 1;
+
+// ── 工具函数 ──
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function dateStr(d) {
+  if (!d) return '--';
+  try { return new Date(d).toLocaleString('zh-CN'); } catch(e) { return String(d); }
+}
+
+function toast(msg, type) {
+  type = type || 'info';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── 确认弹窗 ──
+function showConfirm(title, message, callback) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = message;
+  const btn = document.getElementById('confirm-btn');
+  const cancelBtn = document.getElementById('confirm-modal').querySelector('.btn-secondary');
+  btn.textContent = '确认';
+  cancelBtn.textContent = '取消';
+  cancelBtn.onclick = function() { closeModal('confirm-modal'); };
+  btn.onclick = function() {
+    closeModal('confirm-modal');
+    if (typeof callback === 'function') callback();
+  };
+  showModal('confirm-modal');
+}
+
+// ── 双按钮选择弹窗 ──
+function showChoice(title, message, btn1Text, btn1Callback, btn2Text, btn2Callback) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = message;
+  const btn1 = document.getElementById('confirm-btn');
+  const btn2 = document.getElementById('confirm-modal').querySelector('.btn-secondary');
+  btn1.textContent = btn1Text || '确认';
+  btn2.textContent = btn2Text || '取消';
+  btn1.onclick = function() {
+    closeModal('confirm-modal');
+    if (typeof btn1Callback === 'function') btn1Callback();
+  };
+  btn2.onclick = function() {
+    closeModal('confirm-modal');
+    if (typeof btn2Callback === 'function') btn2Callback();
+  };
+  showModal('confirm-modal');
+}
+
+// ── 时间选择按钮初始化 ──
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.time-btn');
+  if (!btn) return;
+  const group = btn.closest('.time-btn-group');
+  if (!group) return;
+  // 清除同组其他按钮的 active
+  group.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // 清除对应的天数和日期输入
+  const modal = group.closest('.modal');
+  if (modal) {
+    const daysInput = modal.querySelector('input[type="number"][placeholder*="天数"]');
+    const dateInput = modal.querySelector('input[type="date"]');
+    if (daysInput) daysInput.value = '';
+    if (dateInput) dateInput.value = '';
+  }
+});
+
+// 点击弹窗外部关闭
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.modal-overlay.show').forEach(m => {
+    if (e.target === m) m.classList.remove('show');
+  });
+  // 关闭下拉菜单
+  const dm = document.getElementById('admin-dropdown-menu');
+  if (dm.classList.contains('show') && !e.target.closest('.dropdown')) {
+    dm.classList.remove('show');
+  }
+});
+
+function toggleDropdown() {
+  document.getElementById('admin-dropdown-menu').classList.toggle('show');
+}
+
+// ── API 调用封装 ──
+async function api(url, opts = {}) {
+  const headers = { 'Authorization': 'Bearer ' + TOKEN, ...opts.headers };
+  if (!(opts.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const r = await fetch(url.startsWith('http') ? url : API_BASE + url, {
+    ...opts,
+    headers: headers,
+  });
+  if (r.status === 401) {
+    TOKEN = null;
+    localStorage.removeItem('sync_token');
+    showLogin();
+    throw new Error('登录已过期');
+  }
+  if (!r.ok) {
+    let detail = '请求失败 (' + r.status + ')';
+    try { const d = await r.json(); if (d.detail) detail = d.detail; } catch(e) {}
+    throw new Error(detail);
+  }
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return r.json();
+  return r;
+}
+
+// ── 登录 / 退出 ──
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'none';
+}
+
+function showMain() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+}
+
+async function login() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const totp = document.getElementById('login-totp').value.trim();
+  const errEl = document.getElementById('login-error');
+  if (!user || !pass) { errEl.textContent = '请输入用户名和密码'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  try {
+    const body = { username: user, password: pass };
+    if (totp) body.totp_code = totp;
+    const r = await fetch(API_BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || '登录失败');
+    TOKEN = data.access_token;
+    localStorage.setItem('sync_token', TOKEN);
+    await init();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function logout() {
+  TOKEN = null;
+  localStorage.removeItem('sync_token');
+  showLogin();
+}
+
+// ── 头像加载 ──
+async function loadAvatar(username) {
+  const area = document.getElementById('admin-avatar-area');
+  try {
+    const r = await fetch(API_BASE + '/auth/profile/avatar/image', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+    });
+    if (r.ok) {
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      area.innerHTML = '<img src="' + url + '" alt="头像">';
+    } else {
+      area.innerHTML = '<span class="avatar-placeholder">' + (username ? username.charAt(0).toUpperCase() : '管') + '</span>';
+    }
+  } catch (e) {
+    area.innerHTML = '<span class="avatar-placeholder">' + (username ? username.charAt(0).toUpperCase() : '管') + '</span>';
+  }
+}
+
+// ── 初始化 ──
+async function init() {
+  showMain();
+  try {
+    ADMIN_PROFILE = await api('/auth/profile');
+    document.getElementById('admin-name').textContent = ADMIN_PROFILE.nickname || ADMIN_PROFILE.username;
+    loadAvatar(ADMIN_PROFILE.username);
+  } catch (e) {
+    toast('加载个人信息失败', 'error');
+  }
+  await loadStats();
+  await loadUsers();
+  await loadAdminInvites();
+  await loadUserInvites();
+  await loadLogs();
+  await loadConfig();
+}
+
+// ── 统计 ──
+async function loadStats() {
+  try {
+    const d = await api('/admin/stats');
+    document.getElementById('stat-users').textContent = d.total_users ?? '--';
+    document.getElementById('stat-active').textContent = d.active_today ?? '--';
+    document.getElementById('stat-data').textContent = d.total_data_items ?? '--';
+    document.getElementById('stat-invites').textContent = d.total_invite_codes ?? '--';
+  } catch (e) {
+    document.getElementById('stats-grid').innerHTML = '<p style="color:var(--btn-danger);font-size:13px;text-align:center;">加载统计失败: ' + esc(e.message) + '</p>';
+  }
+}
+
+// ===================================================================
+// 用户管理
+// ===================================================================
+async function loadUsers(page) {
+  if (page !== undefined) userPage = page;
+  const tbody = document.getElementById('user-table-body');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">加载中...</td></tr>';
+
+  const search = document.getElementById('user-search').value.trim();
+  const filter = document.getElementById('user-filter-status').value;
+  const sort = document.getElementById('user-sort').value;
+
+  let url = '/admin/users?page=' + userPage + '&page_size=20';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  if (filter) url += '&filter=' + encodeURIComponent(filter);
+  if (sort) url += '&sort=' + encodeURIComponent(sort);
+
+  try {
+    const d = await api(url);
+    const users = d.users || d.items || [];
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">暂无用户</td></tr>';
+      document.getElementById('user-pagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = users.map(u => {
+      const status = u.is_active !== false
+        ? '<span class="badge badge-green">正常</span>'
+        : '<span class="badge badge-red">已锁定</span>';
+      const adminBadge = u.is_admin
+        ? '<span class="badge badge-red">管理员</span>'
+        : '<span class="badge badge-gray">用户</span>';
+      const totpBadge = u.totp_enabled
+        ? '<span class="badge badge-green">开</span>'
+        : '<span class="badge badge-gray">关</span>';
+
+      let actions = '<div class="action-group">';
+      if (u.id === ADMIN_PROFILE.id) {
+        actions += '<span style="color:var(--btn-danger);font-size:12px;font-weight:500;">禁止删除（管理员账户）</span>';
+      } else {
+        if (u.is_active !== false) {
+          actions += '<button class="btn-lock" onclick="toggleLock(' + u.id + ',true)">锁定</button>';
+        } else {
+          actions += '<button class="btn-unlock" onclick="toggleLock(' + u.id + ',false)">解锁</button>';
+        }
+        if (u.totp_enabled) {
+          actions += '<button class="btn-totp" onclick="clearTotp(' + u.id + ')">清除TOTP</button>';
+        } else {
+          actions += '<button class="btn-totp" onclick="adminTotpBind(' + u.id + ')">协助绑定TOTP</button>';
+        }
+        actions += '<button class="btn-delete" onclick="deleteUser(' + u.id + ',\'' + esc(u.username) + '\')">删除账户</button>';
+      }
+      actions += '</div>';
+
+      return '<tr>' +
+        '<td>' + u.id + '</td>' +
+        '<td><strong>' + esc(u.username) + '</strong></td>' +
+        '<td>' + esc(u.nickname || '--') + '</td>' +
+        '<td>' + esc(u.email || '--') + '</td>' +
+        '<td>' + adminBadge + '</td>' +
+        '<td>' + totpBadge + '</td>' +
+        '<td>' + status + '</td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const total = d.total || users.length;
+    const pages = Math.ceil(total / 20);
+    const currentPage = userPage;
+    const onPage = users.length;
+    document.getElementById('user-page-info').textContent = '当前页 ' + onPage + ' 个用户，共 ' + total + ' 个用户';
+    renderPagination('user-pagination', pages, userPage, p => loadUsers(p));
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+async function toggleLock(uid, lock) {
+  const action = lock ? '锁定' : '解锁';
+  showConfirm('确认操作', '确定' + action + '该用户？', async function() {
+    try {
+      await api('/admin/user/lock', { method: 'POST', body: JSON.stringify({ user_id: uid, lock: lock }) });
+      toast('用户已' + action, 'success');
+      loadUsers();
+    } catch (e) {
+      toast(action + '失败: ' + e.message, 'error');
+    }
+  });
+}
+
+async function deleteUser(uid, username) {
+  showChoice(
+    '删除账户',
+    '确定删除账户 "' + username + '"？此操作不可撤销！',
+    '是',
+    function() {
+      showChoice(
+        '保留数据',
+        '是否将同步数据和密钥（UUID）发送到用户邮箱备份后删除？\n选择"保留"将发送备份邮件，数据可恢复；选择"不保留"直接删除，数据不可恢复。',
+        '保留',
+        async function() {
+          try {
+            await api('/admin/user/delete', { method: 'POST', body: JSON.stringify({ user_id: uid, export_to_email: true }) });
+            toast('账户已删除，数据备份已发送到用户邮箱', 'success');
+            loadUsers();
+            loadStats();
+          } catch (e) {
+            toast('删除失败: ' + e.message, 'error');
+          }
+        },
+        '不保留',
+        async function() {
+          try {
+            await api('/admin/user/delete', { method: 'POST', body: JSON.stringify({ user_id: uid, export_to_email: false }) });
+            toast('账户已删除（数据未保留）', 'success');
+            loadUsers();
+            loadStats();
+          } catch (e) {
+            toast('删除失败: ' + e.message, 'error');
+          }
+        }
+      );
+    },
+    '否',
+    null
+  );
+}
+
+async function clearTotp(uid) {
+  showConfirm('确认操作', '确定清除该用户的 TOTP 双因素认证？', async function() {
+    try {
+      await api('/admin/user/totp-clear', { method: 'POST', body: JSON.stringify({ user_id: uid }) });
+      toast('TOTP 已清除', 'success');
+      loadUsers();
+    } catch (e) {
+      toast('清除失败: ' + e.message, 'error');
+    }
+  });
+}
+
+// ===================================================================
+// 管理员邀请码
+// ===================================================================
+async function loadAdminInvites(page) {
+  if (page !== undefined) adminInvitePage = page;
+  const tbody = document.getElementById('admin-invite-table-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">加载中...</td></tr>';
+
+  const search = document.getElementById('admin-invite-search').value.trim();
+  const filter = document.getElementById('admin-invite-filter-used').value;
+
+  let url = '/invite/list?page=' + adminInvitePage + '&page_size=20&created_by=admin';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  if (filter) url += '&status=' + encodeURIComponent(filter);
+
+  try {
+    const d = await api(url);
+    const codes = d.invites || d.codes || d.items || [];
+    if (!codes.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">暂无管理员邀请码</td></tr>';
+      document.getElementById('admin-invite-pagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = codes.map(c => {
+      const usedStr = (c.used_count || 0) + '/' + (c.max_uses || 1);
+      let statusText = '可用';
+      let statusClass = 'badge-green';
+      if (c.is_locked) { statusText = '已锁定'; statusClass = 'badge-red'; }
+      else if (c.is_used || (c.used_count && c.max_uses && c.used_count >= c.max_uses)) { statusText = '已用完'; statusClass = 'badge-gray'; }
+      else if (c.expires_at && new Date(c.expires_at) < new Date()) { statusText = '已过期'; statusClass = 'badge-gray'; }
+
+      let actions = '<div class="action-group">';
+      if (c.is_locked) {
+        actions += '<button class="btn-unlock" onclick="toggleInviteLock(\'' + c.code + '\',false,\'admin\')">解锁</button>';
+      } else {
+        actions += '<button class="btn-lock" onclick="toggleInviteLock(\'' + c.code + '\',true,\'admin\')">锁定</button>';
+      }
+      actions += '<button class="btn-delete" onclick="deleteInvite(\'' + c.code + '\',\'admin\')">删除</button>';
+      actions += '<button class="btn-unlock" onclick="reuseInvite(\'' + c.code + '\',\'admin\')">复用</button>';
+      actions += '</div>';
+
+      return '<tr>' +
+        '<td><span class="invite-code-text">' + esc(c.code) + '</span></td>' +
+        '<td>' + usedStr + '</td>' +
+        '<td><span class="badge ' + statusClass + '">' + statusText + '</span></td>' +
+        '<td>' + (c.expires_at ? dateStr(c.expires_at) : '不过期') + '</td>' +
+        '<td>' + (c.is_public ? '<span class="badge badge-green">公开</span>' : '<span class="badge badge-gray">私有</span>') + '</td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const total = d.total || codes.length;
+    const pages = Math.ceil(total / 20);
+    const onPage = codes.length;
+    document.getElementById('admin-invite-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
+    renderPagination('admin-invite-pagination', pages, adminInvitePage, p => loadAdminInvites(p));
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+// ===================================================================
+// 普通用户邀请码
+// ===================================================================
+async function loadUserInvites(page) {
+  if (page !== undefined) userInvitePage = page;
+  const tbody = document.getElementById('user-invite-table-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">加载中...</td></tr>';
+
+  const search = document.getElementById('user-invite-search').value.trim();
+  const filter = document.getElementById('user-invite-filter-used').value;
+
+  let url = '/invite/list?page=' + userInvitePage + '&page_size=20&created_by=user';
+  if (search) url += '&search=' + encodeURIComponent(search);
+  if (filter) url += '&status=' + encodeURIComponent(filter);
+
+  try {
+    const d = await api(url);
+    const codes = d.invites || d.codes || d.items || [];
+    if (!codes.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">暂无用户邀请码</td></tr>';
+      document.getElementById('user-invite-pagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = codes.map(c => {
+      const usedStr = (c.used_count || 0) + '/' + (c.max_uses || 1);
+      let statusText = '可用';
+      let statusClass = 'badge-green';
+      if (c.is_locked) { statusText = '已锁定'; statusClass = 'badge-red'; }
+      else if (c.is_used || (c.used_count && c.max_uses && c.used_count >= c.max_uses)) { statusText = '已用完'; statusClass = 'badge-gray'; }
+      else if (c.expires_at && new Date(c.expires_at) < new Date()) { statusText = '已过期'; statusClass = 'badge-gray'; }
+
+      let actions = '<div class="action-group">';
+      if (c.is_locked) {
+        actions += '<button class="btn-unlock" onclick="toggleInviteLock(\'' + c.code + '\',false,\'user\')">解锁</button>';
+      } else {
+        actions += '<button class="btn-lock" onclick="toggleInviteLock(\'' + c.code + '\',true,\'user\')">锁定</button>';
+      }
+      actions += '<button class="btn-delete" onclick="deleteInvite(\'' + c.code + '\',\'user\')">删除</button>';
+      actions += '<button class="btn-unlock" onclick="reuseInvite(\'' + c.code + '\',\'user\')">复用</button>';
+      actions += '</div>';
+
+      return '<tr>' +
+        '<td><span class="invite-code-text">' + esc(c.code) + '</span></td>' +
+        '<td>' + esc(c.created_by_username || '--') + '</td>' +
+        '<td>' + usedStr + '</td>' +
+        '<td><span class="badge ' + statusClass + '">' + statusText + '</span></td>' +
+        '<td>' + (c.expires_at ? dateStr(c.expires_at) : '不过期') + '</td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const total = d.total || codes.length;
+    const pages = Math.ceil(total / 20);
+    const onPage = codes.length;
+    document.getElementById('user-invite-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
+    renderPagination('user-invite-pagination', pages, userInvitePage, p => loadUserInvites(p));
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+async function toggleInviteLock(code, lock, tab) {
+  try {
+    await api('/invite/lock', { method: 'PATCH', body: JSON.stringify({ code: code, lock: lock }) });
+    toast(lock ? '已锁定' : '已解锁', 'success');
+    if (tab === 'user') loadUserInvites(); else loadAdminInvites();
+  } catch (e) {
+    toast('操作失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteInvite(code, tab) {
+  showConfirm('确认操作', '确定删除邀请码 ' + code + '？', async function() {
+    try {
+      await api('/invite/delete', { method: 'DELETE', body: JSON.stringify({ code: code }) });
+      toast('邀请码已删除', 'success');
+      if (tab === 'user') loadUserInvites(); else loadAdminInvites();
+    } catch (e) {
+      toast('删除失败: ' + e.message, 'error');
+    }
+  });
+}
+
+function getSelectedDays(groupId, daysInputId, dateInputId) {
+  // 优先使用快速按钮
+  const group = document.getElementById(groupId);
+  const activeBtn = group.querySelector('.time-btn.active');
+  if (activeBtn) {
+    const days = parseInt(activeBtn.dataset.days);
+    if (days > 0) return days; // 具体天数
+    if (days === 0) return 0; // 永久
+  }
+  // 其次使用天数输入
+  const daysVal = parseInt(document.getElementById(daysInputId).value);
+  if (daysVal && daysVal > 0) return daysVal;
+  // 最后使用日期选择器
+  const dateVal = document.getElementById(dateInputId).value;
+  if (dateVal) {
+    const target = new Date(dateVal);
+    const now = new Date();
+    const diffMs = target.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) return diffDays;
+  }
+  // 全部未设置，默认永久
+  return 0;
+}
+
+function showCreateInvite() {
+  document.getElementById('create-invite-max-uses').value = '1';
+  document.getElementById('create-invite-public').checked = false;
+  document.getElementById('create-invite-days').value = '';
+  document.getElementById('create-invite-expire-date').value = '';
+  // 重置时间选择为"永久"
+  const group = document.getElementById('create-invite-time-group');
+  group.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  group.querySelector('.time-btn[data-days="0"]').classList.add('active');
+  showModal('create-invite-modal');
+}
+
+async function createInvite() {
+  const max_uses = parseInt(document.getElementById('create-invite-max-uses').value) || 1;
+  const is_public = document.getElementById('create-invite-public').checked;
+  const expires_in_days = getSelectedDays('create-invite-time-group', 'create-invite-days', 'create-invite-expire-date');
+  const body = { max_uses: max_uses };
+  if (expires_in_days > 0) body.expires_in_days = expires_in_days;
+  if (is_public) body.is_public = true;
+
+  try {
+    await api('/invite/create', { method: 'POST', body: JSON.stringify(body) });
+    toast('邀请码已创建', 'success');
+    closeModal('create-invite-modal');
+    loadAdminInvites();
+    loadStats();
+  } catch (e) {
+    toast('创建失败: ' + e.message, 'error');
+  }
+}
+
+function showBatchInvite() {
+  document.getElementById('batch-invite-count').value = '5';
+  document.getElementById('batch-invite-max-uses').value = '1';
+  document.getElementById('batch-invite-days').value = '';
+  document.getElementById('batch-invite-expire-date').value = '';
+  // 重置时间选择为"永久"
+  const group = document.getElementById('batch-invite-time-group');
+  group.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  group.querySelector('.time-btn[data-days="0"]').classList.add('active');
+  showModal('batch-invite-modal');
+}
+
+async function batchCreateInvite() {
+  const count = parseInt(document.getElementById('batch-invite-count').value) || 5;
+  const max_uses = parseInt(document.getElementById('batch-invite-max-uses').value) || 1;
+  const expires_in_days = getSelectedDays('batch-invite-time-group', 'batch-invite-days', 'batch-invite-expire-date');
+  const body = { count: count, max_uses: max_uses };
+  if (expires_in_days > 0) body.expires_in_days = expires_in_days;
+
+  try {
+    const result = await api('/invite/batch', { method: 'POST', body: JSON.stringify(body) });
+    const num = result.count || result.codes?.length || count;
+    toast('已生成 ' + num + ' 个邀请码', 'success');
+    closeModal('batch-invite-modal');
+    loadAdminInvites();
+    loadStats();
+  } catch (e) {
+    toast('批量生成失败: ' + e.message, 'error');
+  }
+}
+
+// ===================================================================
+// 系统设置
+// ===================================================================
+async function loadConfig() {
+  try {
+    const cfg = await api('/admin/config');
+    document.getElementById('cfg-require-invite').checked = cfg.require_invite_for_registration === true;
+    document.getElementById('cfg-allow-user-create').checked = cfg.allow_user_create_invite === true;
+    if (cfg.max_invites_per_user !== undefined) {
+      document.getElementById('cfg-max-invites').value = cfg.max_invites_per_user;
+    }
+  } catch (e) {
+    toast('加载系统设置失败', 'error');
+  }
+}
+
+async function saveConfig() {
+  const msgEl = document.getElementById('config-save-msg');
+  msgEl.textContent = '保存中...';
+  msgEl.style.color = 'var(--text-muted)';
+  try {
+    await api('/admin/config', {
+      method: 'PUT',
+      body: JSON.stringify({
+        require_invite_for_registration: document.getElementById('cfg-require-invite').checked,
+        allow_user_create_invite: document.getElementById('cfg-allow-user-create').checked,
+        max_invites_per_user: parseInt(document.getElementById('cfg-max-invites').value) || 0,
+      }),
+    });
+    msgEl.textContent = '设置已保存';
+    msgEl.style.color = 'var(--accent-green)';
+    toast('系统设置已保存', 'success');
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  } catch (e) {
+    msgEl.textContent = '保存失败: ' + e.message;
+    msgEl.style.color = 'var(--btn-danger)';
+    toast('保存失败', 'error');
+  }
+}
+
+// ===================================================================
+// 审计日志
+// ===================================================================
+async function loadLogs(page) {
+  if (page !== undefined) logPage = page;
+  const el = document.getElementById('log-entries');
+  el.innerHTML = '<p class="empty-state">加载中...</p>';
+
+  const search = document.getElementById('log-search').value.trim();
+  let url = '/admin/logs?page=' + logPage + '&page_size=30';
+  if (search) url += '&search=' + encodeURIComponent(search);
+
+  try {
+    const d = await api(url);
+    const logs = d.logs || d.items || [];
+    if (!logs.length) {
+      el.innerHTML = '<p class="empty-state">暂无审计日志</p>';
+      document.getElementById('log-pagination').innerHTML = '';
+      return;
+    }
+    el.innerHTML = logs.map(l => {
+      const time = l.created_at ? dateStr(l.created_at) : '--';
+      const username = l.username || (l.user_id ? '已删除用户#' + l.user_id : '用户?');
+      return '<div class="log-entry">' +
+        '<span class="log-time">' + time + '</span>' +
+        '<span class="log-user">' + esc(username) + '</span>' +
+        '<span class="log-action">' + esc(l.action || '') +
+          (l.detail ? '<span class="log-detail">: ' + esc(l.detail) + '</span>' : '') +
+        '</span>' +
+        '</div>';
+    }).join('');
+
+    const total = d.total || logs.length;
+    const pages = Math.ceil(total / 30);
+    const onPage = logs.length;
+    document.getElementById('log-page-info').textContent = '当前页 ' + onPage + ' 条日志，共 ' + total + ' 条日志';
+    renderPagination('log-pagination', pages, logPage, p => loadLogs(p));
+  } catch (e) {
+    el.innerHTML = '<p class="empty-state" style="color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function clearLogs() {
+  showConfirm('确认操作', '确定清空所有审计日志？此操作不可撤销！', async function() {
+    try {
+      await api('/admin/logs/clear', { method: 'DELETE' });
+      toast('审计日志已清空', 'success');
+      loadLogs();
+    } catch (e) {
+      toast('清空失败: ' + e.message, 'error');
+    }
+  });
+}
+
+// ===================================================================
+// 邮件日志
+// ===================================================================
+async function loadEmailLogs(page) {
+  if (page !== undefined) emailLogPage = page;
+  const el = document.getElementById('email-log-entries');
+  el.innerHTML = '<p class="empty-state">加载中...</p>';
+
+  const search = document.getElementById('email-log-search').value.trim();
+  let url = '/admin/email-logs?page=' + emailLogPage + '&page_size=30';
+  if (search) url += '&search=' + encodeURIComponent(search);
+
+  try {
+    const d = await api(url);
+    const logs = d.logs || d.items || [];
+    if (!logs.length) {
+      el.innerHTML = '<p class="empty-state">暂无邮件日志</p>';
+      document.getElementById('email-log-pagination').innerHTML = '';
+      return;
+    }
+    el.innerHTML = logs.map(l => {
+      const time = l.created_at ? dateStr(l.created_at) : '--';
+      const statusBadge = l.success
+        ? '<span class="badge badge-green">成功</span>'
+        : '<span class="badge badge-red">失败</span>';
+      const errorInfo = !l.success && l.error_message
+        ? '<div style="font-size:11px;color:var(--btn-danger);margin-top:2px;">错误: ' + esc(l.error_message) + '</div>'
+        : '';
+      const bodyPreview = l.body && l.body.length > 200
+        ? l.body.substring(0, 200).replace(/<[^>]*>/g, ' ') + '...'
+        : (l.body || '').replace(/<[^>]*>/g, ' ');
+
+      return '<div class="log-entry" style="flex-direction:column;align-items:flex-start;">' +
+        '<div style="display:flex;gap:10px;width:100%;">' +
+          '<span class="log-time">' + time + '</span>' +
+          '<span style="color:var(--primary-cyan);font-weight:600;">' + esc(l.to_email) + '</span>' +
+          statusBadge +
+          '<span class="log-action">' + esc(l.subject) + '</span>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text-light);margin-top:3px;margin-left:150px;word-break:break-all;">' + esc(bodyPreview.trim()) + '</div>' +
+        errorInfo +
+        '</div>';
+    }).join('');
+
+    const total = d.total || logs.length;
+    const pages = Math.ceil(total / 30);
+    const onPage = logs.length;
+    document.getElementById('email-log-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
+    renderPagination('email-log-pagination', pages, emailLogPage, p => loadEmailLogs(p));
+  } catch (e) {
+    el.innerHTML = '<p class="empty-state" style="color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function clearEmailLogs() {
+  showConfirm('确认操作', '确定清空所有邮件日志？此操作不可撤销！', async function() {
+    try {
+      await api('/admin/email-logs/clear', { method: 'DELETE' });
+      toast('邮件日志已清空', 'success');
+      loadEmailLogs();
+    } catch (e) {
+      toast('清空失败: ' + e.message, 'error');
+    }
+  });
+}
+
+// ===================================================================
+// 管理员自服务 - 资料弹窗
+// ===================================================================
+let _pendingTotpData = null;
+let _pendingTotpBindUserId = null;
+
+function openAdminProfileModal() {
+  // 加载当前资料
+  api('/auth/profile').then(p => {
+    ADMIN_PROFILE = p;
+    document.getElementById('admin-name').textContent = p.nickname || p.username;
+
+    // 头像
+    const area = document.getElementById('profile-avatar-preview');
+    const firstChar = (p.nickname || p.username || '管').charAt(0).toUpperCase();
+    fetch(API_BASE + '/auth/profile/avatar/image', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+    }).then(r => {
+      if (r.ok) {
+        r.blob().then(blob => {
+          const url = URL.createObjectURL(blob);
+          area.innerHTML = '<img src="' + url + '" alt="头像" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">';
+        });
+      } else {
+        area.textContent = firstChar;
+      }
+    }).catch(() => { area.textContent = firstChar; });
+
+    // 昵称
+    document.getElementById('profile-nickname').value = p.nickname || '';
+
+    // 邮箱
+    document.getElementById('profile-email-current').textContent = p.email ? '当前: ' + p.email : '未设置邮箱';
+    document.getElementById('profile-new-email').value = '';
+
+    // 用户名
+    document.getElementById('profile-username-current').textContent = '当前: ' + p.username;
+
+    // TOTP
+    updateProfileTotpUI(p.totp_enabled);
+
+    // 清空密码/验证码输入
+    document.getElementById('profile-old-password').value = '';
+    document.getElementById('profile-new-password').value = '';
+    document.getElementById('profile-confirm-password').value = '';
+    document.getElementById('profile-email-password').value = '';
+    document.getElementById('profile-username-password').value = '';
+    document.getElementById('profile-totp-code').value = '';
+    document.getElementById('profile-totp-disable-code').value = '';
+
+    showModal('profile-modal');
+  }).catch(e => {
+    toast('加载个人资料失败: ' + e.message, 'error');
+  });
+}
+
+function updateProfileTotpUI(enabled) {
+  document.getElementById('profile-totp-setup-area').style.display = 'none';
+  document.getElementById('profile-totp-disable-area').style.display = 'none';
+  document.getElementById('profile-totp-recovery').style.display = 'none';
+  _pendingTotpData = null;
+
+  if (enabled) {
+    document.getElementById('profile-totp-status').textContent = '已开启';
+    document.getElementById('profile-totp-setup-btn').style.display = 'none';
+    document.getElementById('profile-totp-reconfig-btn').style.display = '';
+    document.getElementById('profile-totp-disable-btn').style.display = '';
+  } else {
+    document.getElementById('profile-totp-status').textContent = '未开启';
+    document.getElementById('profile-totp-setup-btn').style.display = '';
+    document.getElementById('profile-totp-reconfig-btn').style.display = 'none';
+    document.getElementById('profile-totp-disable-btn').style.display = 'none';
+  }
+}
+
+// ── 头像裁剪压缩 ──
+function _cropAndCompressAvatar(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function() {
+      const SIZE = 280;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE; canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      // 居中裁剪正方形
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, SIZE, SIZE);
+      // 圆形遮罩
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.beginPath();
+      ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+      ctx.fill();
+      canvas.toBlob(function(blob) {
+        if (blob) resolve(blob);
+        else reject(new Error('裁剪失败'));
+      }, 'image/png', 0.85);
+    };
+    img.onerror = function() { reject(new Error('图片加载失败')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// ── 头像上传 ──
+async function updateAvatar() {
+  const fileInput = document.getElementById('profile-avatar-file');
+  const file = fileInput.files[0];
+  if (!file) { toast('请选择头像文件', 'error'); return; }
+  try {
+    // 裁剪压缩后上传
+    const blob = await _cropAndCompressAvatar(file);
+    const formData = new FormData();
+    formData.append('file', blob, 'avatar.png');
+    const r = await fetch(API_BASE + '/auth/profile/avatar', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: formData,
+    });
+    if (!r.ok) {
+      let detail = '上传失败';
+      try { const d = await r.json(); if (d.detail) detail = d.detail; } catch(e) {}
+      throw new Error(detail);
+    }
+    toast('头像上传成功', 'success');
+    // 更新预览（用裁剪后的 blob）
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const area = document.getElementById('profile-avatar-preview');
+      area.innerHTML = '<img src="' + e.target.result + '" alt="头像" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">';
+    };
+    reader.readAsDataURL(blob);
+    // 刷新下拉菜单头像
+    loadAvatar(ADMIN_PROFILE ? ADMIN_PROFILE.username : null);
+    fileInput.value = '';
+  } catch (e) {
+    toast('头像上传失败: ' + e.message, 'error');
+  }
+}
+
+// ── 修改昵称 ──
+async function saveNickname() {
+  const nickname = document.getElementById('profile-nickname').value.trim();
+  if (!nickname) { toast('请输入昵称', 'error'); return; }
+  try {
+    await api('/auth/profile/nickname', {
+      method: 'PUT',
+      body: JSON.stringify({ nickname: nickname }),
+    });
+    toast('昵称已更新', 'success');
+    // 更新顶栏
+    document.getElementById('admin-name').textContent = nickname;
+    if (ADMIN_PROFILE) ADMIN_PROFILE.nickname = nickname;
+  } catch (e) {
+    toast('更新昵称失败: ' + e.message, 'error');
+  }
+}
+
+// ── 修改邮箱 ──
+async function saveEmail() {
+  const new_email = document.getElementById('profile-new-email').value.trim();
+  const password = document.getElementById('profile-email-password').value;
+  if (!new_email) { toast('请输入新邮箱地址', 'error'); return; }
+  if (!password) { toast('请输入密码确认', 'error'); return; }
+  try {
+    await api('/auth/profile/email', {
+      method: 'PUT',
+      body: JSON.stringify({ new_email: new_email, password: password }),
+    });
+    toast('邮箱已更新', 'success');
+    document.getElementById('profile-email-current').textContent = '当前: ' + new_email;
+    document.getElementById('profile-new-email').value = '';
+    document.getElementById('profile-email-password').value = '';
+    if (ADMIN_PROFILE) ADMIN_PROFILE.email = new_email;
+  } catch (e) {
+    toast('更新邮箱失败: ' + e.message, 'error');
+  }
+}
+
+// ── 修改用户名 ──
+async function saveUsername() {
+  const new_username = document.getElementById('profile-new-username').value.trim();
+  const password = document.getElementById('profile-username-password').value;
+  if (!new_username) { toast('请输入新用户名', 'error'); return; }
+  if (!password) { toast('请输入密码确认', 'error'); return; }
+  try {
+    const r = await api('/auth/profile/username', {
+      method: 'PUT',
+      body: JSON.stringify({ new_username: new_username, password: password }),
+    });
+    // token 重签
+    if (r.access_token) {
+      TOKEN = r.access_token;
+      localStorage.setItem('sync_token', TOKEN);
+    }
+    toast('用户名已更新，请重新登录', 'success');
+    if (ADMIN_PROFILE) ADMIN_PROFILE.username = new_username;
+    document.getElementById('profile-username-current').textContent = '当前: ' + new_username;
+    document.getElementById('profile-new-username').value = '';
+    document.getElementById('profile-username-password').value = '';
+    // 刷新头像显示
+    loadAvatar(new_username);
+  } catch (e) {
+    toast('更新用户名失败: ' + e.message, 'error');
+  }
+}
+
+// ── 修改密码 ──
+async function changePassword() {
+  const old_password = document.getElementById('profile-old-password').value;
+  const new_password = document.getElementById('profile-new-password').value;
+  const confirm_password = document.getElementById('profile-confirm-password').value;
+  if (!old_password) { toast('请输入当前密码', 'error'); return; }
+  if (!new_password) { toast('请输入新密码', 'error'); return; }
+  if (new_password !== confirm_password) { toast('两次输入的新密码不一致', 'error'); return; }
+  if (new_password.length < 6) { toast('新密码长度不能少于6位', 'error'); return; }
+  try {
+    const r = await api('/auth/profile/password', {
+      method: 'PUT',
+      body: JSON.stringify({ old_password: old_password, new_password: new_password }),
+    });
+    if (r.access_token) {
+      TOKEN = r.access_token;
+      localStorage.setItem('sync_token', TOKEN);
+    }
+    toast('密码已修改，请重新登录', 'success');
+    document.getElementById('profile-old-password').value = '';
+    document.getElementById('profile-new-password').value = '';
+    document.getElementById('profile-confirm-password').value = '';
+  } catch (e) {
+    toast('修改密码失败: ' + e.message, 'error');
+  }
+}
+
+// ── TOTP 开启 ──
+async function setupTotp() {
+  try {
+    const data = await api('/auth/totp/setup', { method: 'POST' });
+    _pendingTotpData = data;
+    // 显示二维码
+    const qrArea = document.getElementById('profile-totp-qrcode');
+    if (data.qrcode_b64) {
+      qrArea.innerHTML = '<img src="data:image/png;base64,' + data.qrcode_b64 + '" alt="TOTP 二维码" style="max-width:160px;">';
+    } else {
+      qrArea.innerHTML = '';
+    }
+    // 显示密钥
+    document.getElementById('profile-totp-secret').textContent = '密钥: ' + (data.secret || '');
+    document.getElementById('profile-totp-setup-area').style.display = 'block';
+    document.getElementById('profile-totp-code').value = '';
+    document.getElementById('profile-totp-setup-btn').disabled = true;
+    document.getElementById('profile-totp-reconfig-btn').disabled = true;
+    document.getElementById('profile-totp-disable-btn').disabled = true;
+  } catch (e) {
+    toast('获取 TOTP 配置失败: ' + e.message, 'error');
+  }
+}
+
+async function reconfigTotp() {
+  await setupTotp();
+}
+
+async function verifyTotpSetup() {
+  const code = document.getElementById('profile-totp-code').value.trim();
+  if (!code || code.length !== 6) { toast('请输入6位验证码', 'error'); return; }
+  try {
+    const r = await api('/auth/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code: code }),
+    });
+    // 显示 Recovery Key
+    if (r.recovery_keys && r.recovery_keys.length) {
+      document.getElementById('profile-totp-recovery-keys').textContent = r.recovery_keys.join('  ');
+      document.getElementById('profile-totp-recovery').style.display = 'block';
+    } else if (r.recovery_key) {
+      document.getElementById('profile-totp-recovery-keys').textContent = r.recovery_key;
+      document.getElementById('profile-totp-recovery').style.display = 'block';
+    }
+    document.getElementById('profile-totp-setup-area').style.display = 'none';
+    toast('TOTP 已开启', 'success');
+    updateProfileTotpUI(true);
+    document.getElementById('profile-totp-setup-btn').disabled = false;
+    document.getElementById('profile-totp-reconfig-btn').disabled = false;
+    document.getElementById('profile-totp-disable-btn').disabled = false;
+  } catch (e) {
+    toast('验证失败: ' + e.message, 'error');
+  }
+}
+
+function closeProfileTotpRecovery() {
+  document.getElementById('profile-totp-recovery').style.display = 'none';
+  _pendingTotpData = null;
+}
+
+// ── TOTP 关闭 ──
+function disableTotp() {
+  document.getElementById('profile-totp-disable-area').style.display = 'block';
+  document.getElementById('profile-totp-setup-btn').disabled = true;
+  document.getElementById('profile-totp-reconfig-btn').disabled = true;
+  document.getElementById('profile-totp-disable-btn').disabled = true;
+}
+
+async function confirmDisableTotp() {
+  const code = document.getElementById('profile-totp-disable-code').value.trim();
+  if (!code || code.length !== 6) { toast('请输入6位验证码', 'error'); return; }
+  try {
+    await api('/auth/totp/disable', {
+      method: 'POST',
+      body: JSON.stringify({ code: code }),
+    });
+    toast('TOTP 已关闭', 'success');
+    updateProfileTotpUI(false);
+    document.getElementById('profile-totp-disable-area').style.display = 'none';
+    document.getElementById('profile-totp-setup-btn').disabled = false;
+    document.getElementById('profile-totp-reconfig-btn').disabled = false;
+    document.getElementById('profile-totp-disable-btn').disabled = false;
+  } catch (e) {
+    toast('关闭 TOTP 失败: ' + e.message, 'error');
+  }
+}
+
+// ===================================================================
+// 管理员协助用户绑定 TOTP
+// ===================================================================
+async function adminTotpBind(uid) {
+  _pendingTotpBindUserId = uid;
+  try {
+    const data = await api('/admin/user/totp-bind-setup', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: uid }),
+    });
+    // 显示二维码
+    const qrArea = document.getElementById('totp-bind-qrcode');
+    if (data.qrcode_b64) {
+      qrArea.innerHTML = '<img src="data:image/png;base64,' + data.qrcode_b64 + '" alt="TOTP 二维码" style="max-width:160px;">';
+    } else {
+      qrArea.innerHTML = '';
+    }
+    document.getElementById('totp-bind-secret').textContent = '密钥: ' + (data.secret || '');
+    document.getElementById('totp-bind-code').value = '';
+    showModal('totp-bind-modal');
+  } catch (e) {
+    toast('获取绑定配置失败: ' + e.message, 'error');
+  }
+}
+
+async function adminTotpBindConfirm() {
+  const code = document.getElementById('totp-bind-code').value.trim();
+  if (!code || code.length !== 6) { toast('请输入6位验证码', 'error'); return; }
+  if (!_pendingTotpBindUserId) { toast('绑定会话已过期，请重新开始', 'error'); return; }
+  try {
+    await api('/admin/user/totp-bind-confirm', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: _pendingTotpBindUserId, code: code }),
+    });
+    toast('TOTP 绑定成功', 'success');
+    closeModal('totp-bind-modal');
+    _pendingTotpBindUserId = null;
+    loadUsers();
+  } catch (e) {
+    toast('绑定失败: ' + e.message, 'error');
+  }
+}
+
+// ===================================================================
+// 邀请码复用
+// ===================================================================
+async function reuseInvite(code, tab) {
+  try {
+    const r = await api('/invite/reset', {
+      method: 'POST',
+      body: JSON.stringify({ code: code }),
+    });
+    toast('邀请码已重置，使用次数归零', 'success');
+    if (tab === 'user') loadUserInvites(); else loadAdminInvites();
+  } catch (e) {
+    toast('复用失败: ' + e.message, 'error');
+  }
+}
+
+// ===================================================================
+// 分页渲染
+// ===================================================================
+function renderPagination(elId, pages, current, onClick) {
+  const el = document.getElementById(elId);
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  // 上一页
+  html += '<button ' + (current <= 1 ? 'disabled' : 'onclick="callWith(' + (current - 1) + ')"') + '>上一页</button>';
+  // 数字页码（最多显示 7 个）
+  let start = Math.max(1, current - 3);
+  let end = Math.min(pages, current + 3);
+  if (end - start < 6) {
+    if (start === 1) end = Math.min(pages, start + 6);
+    else start = Math.max(1, end - 6);
+  }
+  if (start > 1) html += '<button onclick="callWith(1)">1</button>' + (start > 2 ? '<button disabled>...</button>' : '');
+  for (let i = start; i <= end; i++) {
+    html += '<button class="' + (i === current ? 'active' : '') + '" onclick="callWith(' + i + ')">' + i + '</button>';
+  }
+  if (end < pages) html += (end < pages - 1 ? '<button disabled>...</button>' : '') + '<button onclick="callWith(' + pages + ')">' + pages + '</button>';
+  // 下一页
+  html += '<button ' + (current >= pages ? 'disabled' : 'onclick="callWith(' + (current + 1) + ')"') + '>下一页</button>';
+  el.innerHTML = html;
+  // 存储回调
+  window._paginationCallback = onClick;
+}
+
+function callWith(page) {
+  if (window._paginationCallback) window._paginationCallback(page);
+}
+
+// ===================================================================
+// 标签页切换
+// ===================================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  // 高亮对应 tab
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tab + "'")) {
+      t.classList.add('active');
+    }
+  });
+}
+
+// ===================================================================
+// 启动
+// ===================================================================
+if (TOKEN) {
+  init().catch(e => { showLogin(); });
+} else {
+  showLogin();
+}
+</script>
+</body>
+</html>

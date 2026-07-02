@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CBox 个人资料</title>
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+<style>
+/* ── 个人资料页专属 ── */
+.profile-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.profile-avatar-wrap {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+.profile-avatar-wrap:hover .avatar-overlay {
+  opacity: 1;
+}
+.avatar-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  opacity: 0;
+  transition: var(--transition);
+}
+.profile-info {
+  display: grid;
+  gap: 12px;
+}
+.profile-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.profile-field:last-child {
+  border-bottom: none;
+}
+.profile-field .pf-label {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  padding-top: 4px;
+}
+.profile-field .pf-value {
+  flex: 1;
+  min-width: 0;
+}
+.profile-field .pf-value .pf-text {
+  font-size: 14px;
+  color: var(--text-main);
+  word-break: break-all;
+}
+.profile-field .pf-value .pf-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.profile-field .pf-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+}
+.inline-edit {
+  display: none;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.inline-edit.open {
+  display: flex;
+}
+.inline-edit input {
+  flex: 1;
+  min-width: 140px;
+}
+.status-inline {
+  font-size: 12px;
+  margin-top: 2px;
+}
+.status-inline.success { color: var(--accent-green); }
+.status-inline.error { color: var(--btn-danger); }
+
+/* ── 裁剪 ── */
+.crop-section {
+  display: none;
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+.crop-section.open {
+  display: block;
+}
+.crop-section .img-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+.crop-section .crop-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+/* ── TOTP 设置区域 ── */
+.totp-setup-area {
+  display: none;
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+.totp-setup-area.open {
+  display: block;
+}
+.totp-setup-area .totp-qr {
+  text-align: center;
+  margin: 12px 0;
+}
+.totp-setup-area .totp-qr img {
+  max-width: 180px;
+  height: auto;
+}
+.totp-setup-area .totp-secret {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 13px;
+  text-align: center;
+  color: var(--primary-deep);
+  margin: 8px 0;
+  word-break: break-all;
+}
+
+/* ── 登录框嵌入 ── */
+.auth-required {
+  text-align: center;
+  padding: 40px 20px;
+}
+.auth-required h3 {
+  color: var(--primary-deep);
+  margin-bottom: 12px;
+}
+
+/* ── 危险区域 ── */
+.card-danger {
+  border: 1px solid var(--btn-danger);
+}
+.card-danger .section-title {
+  color: var(--btn-danger);
+}
+.card-danger .hint-text {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* ── 通用弹窗 (modal) ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open {
+  display: flex;
+}
+.modal-box {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 460px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--btn-danger);
+}
+.modal-box p {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.modal-box .delete-list {
+  background: var(--bg-main);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.modal-box .delete-list li {
+  font-size: 13px;
+  color: var(--text-main);
+  padding: 3px 0;
+  list-style: disc;
+  margin-left: 18px;
+}
+.modal-box .form-group {
+  margin-bottom: 12px;
+}
+.modal-box .form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.modal-box .form-group .form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.modal-box .form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.modal-box .form-actions .btn {
+  min-width: 100px;
+}
+.modal-box .toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-light);
+  margin-top: 4px;
+}
+.modal-box .toggle-row label {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: normal;
+}
+/* 开关样式 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-light);
+  border-radius: 24px;
+  transition: var(--transition);
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: var(--transition);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--accent-green);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+</style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<div class="topbar">
+  <a href="/">← 首页</a>
+  <span class="title">个人资料</span>
+  <div class="topbar-right">
+    <a href="/admin" id="topbar-admin" style="display:none;">管理</a>
+    <a href="/doc">API 文档</a>
+    <a href="#" id="topbar-logout" onclick="logout()" style="color:var(--btn-danger);display:none;">退出</a>
+  </div>
+</div>
+
+<div class="container" style="max-width:600px;">
+
+  <!-- 未登录 → 内嵌登录表单 -->
+  <div id="login-section" class="card" style="display:none;">
+    <div class="card" style="max-width:400px;margin:20px auto;">
+      <div class="section-title" style="text-align:center;">请登录</div>
+      <div id="login-error" style="color:var(--btn-danger);font-size:13px;text-align:center;margin-bottom:12px;display:none;"></div>
+      <div class="form-group">
+        <label>用户名或邮箱</label>
+        <input type="text" id="login-user" placeholder="用户名或邮箱" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-pass" placeholder="········" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label>TOTP 验证码（未开启则留空）</label>
+        <input type="text" id="login-totp" placeholder="6 位数字" maxlength="6">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()" style="width:100%;">登 录</button>
+      <div style="text-align:center;margin-top:12px;"><a href="/">返回首页</a></div>
+    </div>
+  </div>
+
+  <!-- 加载中 -->
+  <div id="loading-section" class="card">
+    <div class="empty-state">加载中...</div>
+  </div>
+
+  <!-- 个人资料主内容 -->
+  <div id="profile-section" style="display:none;">
+
+    <!-- 状态消息 -->
+    <div id="status" class="status-msg"></div>
+
+    <!-- 头像卡片 -->
+    <div class="card">
+      <div class="section-title">头像</div>
+      <div class="profile-header">
+        <div class="profile-avatar-wrap" onclick="document.getElementById('file-input').click()">
+          <div class="avatar-placeholder" id="avatar-placeholder">?</div>
+          <img id="avatar-img" style="display:none" alt="头像">
+          <div class="avatar-overlay">更换</div>
+        </div>
+        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">
+      </div>
+      <!-- 裁剪区域 -->
+      <div class="crop-section" id="crop-section">
+        <div class="img-container">
+          <img id="crop-image" alt="裁剪预览">
+        </div>
+        <div class="crop-actions">
+          <button class="btn btn-secondary" onclick="cancelCrop()">取消</button>
+          <button class="btn btn-primary" onclick="uploadCrop()">确认上传</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 基本信息卡片 -->
+    <div class="card">
+      <div class="section-title">基本信息</div>
+      <div class="profile-info">
+
+        <!-- 用户名 -->
+        <div class="profile-field">
+          <div class="pf-label">用户名</div>
+          <div class="pf-value">
+            <div class="pf-text" id="p-username">—</div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('username')">修改</button>
+          </div>
+        </div>
+        <div class="inline-edit" id="edit-username">
+          <input type="text" id="edit-username-input" placeholder="新用户名">
+          <button class="btn btn-sm btn-primary" onclick="saveUsername()">保存</button>
+          <button class="btn btn-sm btn-secondary" onclick="hideEdit('username')">取消</button>
+          <div class="status-inline" id="status-username"></div>
+        </div>
+
+        <!-- 昵称 -->
+        <div class="profile-field">
+          <div class="pf-label">昵称</div>
+          <div class="pf-value">
+            <div class="pf-text" id="p-nickname">—</div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('nickname')">修改</button>
+          </div>
+        </div>
+        <div class="inline-edit" id="edit-nickname">
+          <input type="text" id="edit-nickname-input" placeholder="新昵称">
+          <button class="btn btn-sm btn-primary" onclick="saveNickname()">保存</button>
+          <button class="btn btn-sm btn-secondary" onclick="hideEdit('nickname')">取消</button>
+          <div class="status-inline" id="status-nickname"></div>
+        </div>
+
+        <!-- 邮箱 -->
+        <div class="profile-field">
+          <div class="pf-label">邮箱</div>
+          <div class="pf-value">
+            <div class="pf-text" id="p-email">—</div>
+            <div class="pf-sub" id="p-email-status"></div>
+          </div>
+          <div class="pf-actions" id="email-actions">
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('email')">修改</button>
+            <button class="btn btn-sm btn-success" id="btn-verify-email" style="display:none;" onclick="sendEmailVerification()">验证</button>
+          </div>
+        </div>
+        <div class="inline-edit" id="edit-email">
+          <input type="email" id="edit-email-input" placeholder="新邮箱">
+          <button class="btn btn-sm btn-primary" onclick="saveEmail()">保存</button>
+          <button class="btn btn-sm btn-secondary" onclick="hideEdit('email')">取消</button>
+          <div class="status-inline" id="status-email"></div>
+        </div>
+        <div class="inline-edit" id="verify-email">
+          <input type="text" id="verify-code-input" placeholder="验证码" maxlength="6">
+          <button class="btn btn-sm btn-primary" onclick="verifyEmail()">确认</button>
+          <button class="btn btn-sm btn-secondary" onclick="hideEdit('verify')">取消</button>
+          <div class="status-inline" id="status-verify"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 密码修改卡片 -->
+    <div class="card">
+      <div class="section-title">密码</div>
+      <div class="profile-info">
+        <div class="profile-field">
+          <div class="pf-label">密码</div>
+          <div class="pf-value">
+            <div class="pf-text">••••••••</div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('password')">修改</button>
+          </div>
+        </div>
+        <div class="inline-edit" id="edit-password">
+          <input type="password" id="edit-pass-current" placeholder="当前密码">
+          <input type="password" id="edit-pass-new" placeholder="新密码">
+          <input type="password" id="edit-pass-confirm" placeholder="确认新密码">
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-primary" onclick="savePassword()">保存</button>
+            <button class="btn btn-sm btn-secondary" onclick="hideEdit('password')">取消</button>
+          </div>
+          <div class="status-inline" id="status-password"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOTP 双因素认证卡片 -->
+    <div class="card">
+      <div class="section-title">双因素认证 (TOTP)</div>
+      <div class="profile-info">
+        <div class="profile-field">
+          <div class="pf-label">状态</div>
+          <div class="pf-value">
+            <div class="pf-text" id="p-totp-status">—</div>
+          </div>
+          <div class="pf-actions">
+            <button class="btn btn-sm btn-success" id="btn-totp-setup" onclick="setupTotp()" style="display:none;">绑定</button>
+            <button class="btn btn-sm btn-danger" id="btn-totp-disable" onclick="showEdit('totp-disable')" style="display:none;">解绑</button>
+          </div>
+        </div>
+        <div class="inline-edit" id="edit-totp-disable">
+          <input type="text" id="disable-totp-code" placeholder="输入 TOTP 验证码确认" maxlength="6">
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-danger" onclick="disableTotp()">确认解绑</button>
+            <button class="btn btn-sm btn-secondary" onclick="hideEdit('totp-disable')">取消</button>
+          </div>
+          <div class="status-inline" id="status-totp-disable"></div>
+        </div>
+      </div>
+      <!-- TOTP 设置区域 -->
+      <div class="totp-setup-area" id="totp-setup-area">
+        <p class="hint-text" style="text-align:center;">使用身份验证器应用扫描以下二维码或输入密钥</p>
+        <div class="totp-qr" id="totp-qr-container"></div>
+        <div class="totp-secret" id="totp-secret-text"></div>
+        <div style="margin-top:12px;">
+          <input type="text" id="totp-verify-code" placeholder="输入应用显示的 6 位验证码" maxlength="6" style="text-align:center;">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
+          <button class="btn btn-primary" onclick="verifyTotp()">确认绑定</button>
+          <button class="btn btn-secondary" onclick="cancelTotpSetup()">取消</button>
+        </div>
+        <div class="status-inline" id="status-totp-setup" style="text-align:center;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- 危险区域卡片 -->
+    <div class="card card-danger">
+      <div class="section-title">危险区域</div>
+      <div class="profile-info">
+        <p class="hint-text">注销后所有数据将被永久删除，此操作不可撤销。</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-danger" onclick="openDeleteModal()">注销账号</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 注销确认弹窗 -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <h3>注销账号</h3>
+    <p>确认注销后，以下数据将被永久删除：</p>
+    <ul class="delete-list">
+      <li>账号</li>
+      <li>同步数据</li>
+      <li>审计日志</li>
+      <li>头像</li>
+    </ul>
+
+    <!-- TOTP 验证 -->
+    <div class="form-group" id="delete-totp-group" style="display:none;">
+      <label>TOTP 双因素验证（必填）</label>
+      <input type="text" id="delete-totp-code" placeholder="输入 6 位 TOTP 验证码" maxlength="6">
+    </div>
+
+    <!-- 邮箱验证码 -->
+    <div class="form-group" id="delete-email-group" style="display:none;">
+      <label>邮箱验证码（可选）+ 密码注销</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="delete-email-code" placeholder="输入邮箱验证码" maxlength="6" style="flex:1;">
+        <button class="btn btn-sm btn-secondary" id="btn-send-delete-code" onclick="sendDeleteCode()">发送验证码</button>
+      </div>
+      <div class="form-hint" id="delete-email-hint"></div>
+    </div>
+
+    <!-- 密码验证（始终显示） -->
+    <div class="form-group">
+      <label>密码验证</label>
+      <input type="password" id="delete-password" placeholder="输入当前密码确认">
+    </div>
+
+    <!-- 导出数据开关 -->
+    <div class="toggle-row">
+      <label>导出数据</label>
+      <label class="toggle-switch">
+        <input type="checkbox" id="delete-export-data" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-danger" id="btn-confirm-delete" onclick="confirmDeleteAccount()">确认注销账号</button>
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+    </div>
+    <div class="status-inline" id="status-delete" style="margin-top:8px;text-align:center;"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+<script>
+const API = window.location.origin + '/api';
+let token = localStorage.getItem('sync_token');
+let cropper = null;
+let currentFile = null;
+let _avatarObjectUrl = null;
+
+// ── 初始化 ──
+if (token) {
+  loadProfile();
+} else {
+  document.getElementById('loading-section').style.display = 'none';
+  document.getElementById('login-section').style.display = 'block';
+}
+
+// ── 登录（支持 TOTP） ──
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const totp = document.getElementById('login-totp').value.trim();
+  const errDiv = document.getElementById('login-error');
+  errDiv.style.display = 'none';
+  if (!user || !pass) { errDiv.textContent = '请输入用户名和密码'; errDiv.style.display = 'block'; return; }
+  try {
+    const body = { username: user, password: pass };
+    if (totp) body.totp_code = totp;
+    const r = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.totp_required) { errDiv.textContent = '需要 TOTP 验证码'; errDiv.style.display = 'block'; return; }
+    if (d.access_token) {
+      token = d.access_token;
+      localStorage.setItem('sync_token', token);
+      loadProfile();
+    } else {
+      errDiv.textContent = d.detail || '登录失败';
+      errDiv.style.display = 'block';
+    }
+  } catch (e) { errDiv.textContent = '网络错误'; errDiv.style.display = 'block'; }
+}
+
+// ── 登录表单回车响应 ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('#login-section input').forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
+
+// ── 加载个人资料 ──
+async function loadProfile() {
+  document.getElementById('loading-section').style.display = 'block';
+  document.getElementById('profile-section').style.display = 'none';
+  try {
+    const d = await apiCall(API + '/auth/profile');
+    document.getElementById('p-username').textContent = d.username || '—';
+    document.getElementById('p-nickname').textContent = d.nickname || '未设置';
+    document.getElementById('p-email').textContent = d.email || '未设置';
+
+    // 邮箱验证状态
+    const emailStatus = d.email_verified
+      ? '<span style="color:var(--accent-green);">已验证</span>'
+      : '<span style="color:var(--btn-warning);">未验证</span>';
+    document.getElementById('p-email-status').innerHTML = emailStatus;
+    if (d.email && !d.email_verified) {
+      document.getElementById('btn-verify-email').style.display = 'inline-flex';
+    }
+
+    // TOTP 状态
+    const totpEnabled = d.totp_enabled === true;
+    document.getElementById('p-totp-status').textContent = totpEnabled ? '已启用' : '未启用';
+    document.getElementById('btn-totp-setup').style.display = totpEnabled ? 'none' : 'inline-flex';
+    document.getElementById('btn-totp-disable').style.display = totpEnabled ? 'inline-flex' : 'none';
+
+    // 管理员顶栏链接
+    if (d.is_admin) {
+      document.getElementById('topbar-admin').style.display = 'inline';
+    }
+    document.getElementById('topbar-logout').style.display = 'inline';
+
+    // 头像
+    if (d.avatar_url) {
+      await loadAvatar(d.avatar_url);
+    }
+
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('profile-section').style.display = 'block';
+  } catch (e) {
+    document.getElementById('loading-section').innerHTML = '<div class="empty-state" style="color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ── 头像加载 (JWT Blob) ──
+async function loadAvatar(url) {
+  // 清理旧 blob
+  if (_avatarObjectUrl) {
+    URL.revokeObjectURL(_avatarObjectUrl);
+    _avatarObjectUrl = null;
+  }
+  if (!url) {
+    document.getElementById('avatar-img').style.display = 'none';
+    document.getElementById('avatar-placeholder').style.display = 'inline-flex';
+    return;
+  }
+  try {
+    const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
+    const r = await fetch(fullUrl, {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const blob = await r.blob();
+    _avatarObjectUrl = URL.createObjectURL(blob);
+    document.getElementById('avatar-img').src = _avatarObjectUrl;
+    document.getElementById('avatar-img').style.display = 'inline';
+    document.getElementById('avatar-placeholder').style.display = 'none';
+  } catch (e) {
+    document.getElementById('avatar-img').style.display = 'none';
+    document.getElementById('avatar-placeholder').style.display = 'inline-flex';
+  }
+}
+
+// ── 通用 API 调用 ──
+async function apiCall(url, opts = {}) {
+  const r = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...opts.headers },
+  });
+  if (r.status === 401) { token = null; localStorage.removeItem('sync_token'); window.location.reload(); throw new Error('登录已过期'); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || '请求失败'); }
+  return r.json();
+}
+
+// ── 内联编辑 ──
+function showEdit(field) {
+  document.querySelectorAll('.inline-edit').forEach(el => el.classList.remove('open'));
+  const el = document.getElementById('edit-' + field);
+  if (el) el.classList.add('open');
+}
+function hideEdit(field) {
+  const el = document.getElementById('edit-' + field);
+  if (el) el.classList.remove('open');
+}
+
+// ── 修改昵称 ──
+async function saveNickname() {
+  const val = document.getElementById('edit-nickname-input').value.trim();
+  if (!val) { setInlineStatus('nickname', '请输入昵称', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/profile/nickname', { method: 'PUT', body: JSON.stringify({ nickname: val }) });
+    document.getElementById('p-nickname').textContent = val;
+    setInlineStatus('nickname', '昵称已更新', 'success');
+    hideEdit('nickname');
+  } catch (e) { setInlineStatus('nickname', e.message, 'error'); }
+}
+
+// ── 修改用户名 ──
+async function saveUsername() {
+  const val = document.getElementById('edit-username-input').value.trim();
+  if (!val) { setInlineStatus('username', '请输入用户名', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/profile/username', { method: 'PUT', body: JSON.stringify({ username: val }) });
+    document.getElementById('p-username').textContent = val;
+    setInlineStatus('username', '用户名已更新', 'success');
+    hideEdit('username');
+  } catch (e) { setInlineStatus('username', e.message, 'error'); }
+}
+
+// ── 修改邮箱 ──
+async function saveEmail() {
+  const val = document.getElementById('edit-email-input').value.trim();
+  if (!val || !val.includes('@')) { setInlineStatus('email', '请输入有效邮箱', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/profile', { method: 'PUT', body: JSON.stringify({ email: val }) });
+    document.getElementById('p-email').textContent = val;
+    document.getElementById('btn-verify-email').style.display = 'inline-flex';
+    setInlineStatus('email', '邮箱已更新，请验证', 'success');
+    hideEdit('email');
+    document.getElementById('p-email-status').innerHTML = '<span style="color:var(--btn-warning);">未验证</span>';
+  } catch (e) { setInlineStatus('email', e.message, 'error'); }
+}
+
+// ── 发送邮箱验证 ──
+async function sendEmailVerification() {
+  try {
+    await apiCall(API + '/auth/resend-verification', { method: 'POST' });
+    document.getElementById('verify-email').classList.add('open');
+    setInlineStatus('verify', '验证码已发送，请查收邮箱', 'success');
+  } catch (e) { setInlineStatus('email', e.message, 'error'); }
+}
+
+// ── 验证邮箱 ──
+async function verifyEmail() {
+  const code = document.getElementById('verify-code-input').value.trim();
+  if (!code) { setInlineStatus('verify', '请输入验证码', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/verify-email', { method: 'POST', body: JSON.stringify({ code: code }) });
+    document.getElementById('p-email-status').innerHTML = '<span style="color:var(--accent-green);">已验证</span>';
+    document.getElementById('btn-verify-email').style.display = 'none';
+    setInlineStatus('verify', '邮箱验证成功', 'success');
+    document.getElementById('verify-email').classList.remove('open');
+  } catch (e) { setInlineStatus('verify', e.message, 'error'); }
+}
+
+// ── 修改密码 ──
+async function savePassword() {
+  const current = document.getElementById('edit-pass-current').value;
+  const newPass = document.getElementById('edit-pass-new').value;
+  const confirm = document.getElementById('edit-pass-confirm').value;
+  if (!current || !newPass || !confirm) { setInlineStatus('password', '请填写所有字段', 'error'); return; }
+  if (newPass !== confirm) { setInlineStatus('password', '两次密码不一致', 'error'); return; }
+  if (newPass.length < 6) { setInlineStatus('password', '密码至少 6 位', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/profile/password', { method: 'PUT', body: JSON.stringify({ current_password: current, new_password: newPass }) });
+    setInlineStatus('password', '密码已更新', 'success');
+    hideEdit('password');
+    document.getElementById('edit-pass-current').value = '';
+    document.getElementById('edit-pass-new').value = '';
+    document.getElementById('edit-pass-confirm').value = '';
+  } catch (e) { setInlineStatus('password', e.message, 'error'); }
+}
+
+// ── TOTP 设置 ──
+let totpSetupData = null;
+
+async function setupTotp() {
+  try {
+    const d = await apiCall(API + '/auth/totp/setup', { method: 'POST' });
+    totpSetupData = d;
+    const area = document.getElementById('totp-setup-area');
+    area.classList.add('open');
+
+    // 显示二维码
+    const qrContainer = document.getElementById('totp-qr-container');
+    qrContainer.innerHTML = '';
+    if (d.qrcode_b64) {
+      const img = document.createElement('img');
+      img.src = 'data:image/png;base64,' + d.qrcode_b64;
+      img.alt = 'TOTP 二维码';
+      img.style.maxWidth = '180px';
+      qrContainer.appendChild(img);
+    }
+
+    // 显示密钥
+    document.getElementById('totp-secret-text').textContent = '密钥: ' + (d.secret || d.key || '');
+    setInlineStatus('totp-setup', '', '');
+  } catch (e) { showStatus(e.message, 'error'); }
+}
+
+async function verifyTotp() {
+  const code = document.getElementById('totp-verify-code').value.trim();
+  if (!code || code.length < 6) { setInlineStatus('totp-setup', '请输入 6 位验证码', 'error'); return; }
+  try {
+    const d = await apiCall(API + '/auth/totp/verify', { method: 'POST', body: JSON.stringify({ code: code }) });
+    document.getElementById('p-totp-status').textContent = '已启用';
+    document.getElementById('btn-totp-setup').style.display = 'none';
+    document.getElementById('btn-totp-disable').style.display = 'inline-flex';
+    cancelTotpSetup();
+    // 显示 Recovery Key
+    if (d.recovery_key) {
+      const emailNote = d.recovery_key_sent_to_email ? '（已发送到您的邮箱）' : '（SMTP 未配置，请截图保存）';
+      showStatus('TOTP 已成功绑定', 'success');
+      setTimeout(() => {
+        showModal('Recovery Key（恢复密钥）',
+          '<div style="text-align:center;margin:10px 0;padding:14px;background:#fff3cd;border-radius:8px;border:1px solid #ffc107;">' +
+          '<p style="font-size:13px;color:#856404;margin-bottom:8px;">请立即保存此密钥！每次 TOTP 绑定会生成新的 Recovery Key。</p>' +
+          '<p style="font-size:20px;font-family:monospace;letter-spacing:3px;font-weight:bold;color:#d32f2f;">' + d.recovery_key + '</p>' +
+          '<p style="font-size:11px;color:#856404;margin-top:8px;">' + emailNote + '</p>' +
+          '</div>' +
+          '<p style="font-size:12px;color:#666;">丢失 TOTP 设备时，可使用此密钥 + 用户名登录绕过 TOTP 验证。</p>'
+        );
+      }, 600);
+    } else {
+      showStatus('TOTP 已成功绑定', 'success');
+    }
+  } catch (e) { setInlineStatus('totp-setup', e.message, 'error'); }
+}
+
+function cancelTotpSetup() {
+  document.getElementById('totp-setup-area').classList.remove('open');
+  document.getElementById('totp-verify-code').value = '';
+  totpSetupData = null;
+}
+
+async function disableTotp() {
+  const code = document.getElementById('disable-totp-code').value.trim();
+  if (!code) { setInlineStatus('totp-disable', '请输入 TOTP 验证码', 'error'); return; }
+  try {
+    await apiCall(API + '/auth/totp/disable', { method: 'POST', body: JSON.stringify({ code: code }) });
+    document.getElementById('p-totp-status').textContent = '未启用';
+    document.getElementById('btn-totp-setup').style.display = 'inline-flex';
+    document.getElementById('btn-totp-disable').style.display = 'none';
+    hideEdit('totp-disable');
+    document.getElementById('disable-totp-code').value = '';
+    showStatus('TOTP 已解绑', 'success');
+  } catch (e) { setInlineStatus('totp-disable', e.message, 'error'); }
+}
+
+// ── 头像裁剪 ──
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowed.includes(file.type)) { showStatus('仅支持 JPG/PNG/WebP/GIF', 'error'); return; }
+  if (file.size > 5 * 1024 * 1024) { showStatus('图片不能超过 5MB', 'error'); return; }
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = document.getElementById('crop-image');
+    img.src = ev.target.result;
+    document.getElementById('crop-section').classList.add('open');
+    if (cropper) cropper.destroy();
+    cropper = new Cropper(img, {
+      viewMode: 1,
+      dragMode: 'move',
+      aspectRatio: 1,
+      cropBoxResizable: false,
+      cropBoxMovable: false,
+      rotatable: false,
+      scalable: false,
+      zoomable: true,
+      zoomOnTouch: true,
+      zoomOnWheel: true,
+      minCropBoxWidth: 100,
+      minCropBoxHeight: 100,
+      background: false,
+      center: true,
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+function cancelCrop() {
+  if (cropper) { cropper.destroy(); cropper = null; }
+  document.getElementById('crop-section').classList.remove('open');
+  document.getElementById('file-input').value = '';
+  currentFile = null;
+}
+
+async function uploadCrop() {
+  if (!cropper || !currentFile) return;
+  const canvas = cropper.getCroppedCanvas({ width: 400, height: 400, fillColor: '#fff', imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+  // 圆形裁剪
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.beginPath();
+  ctx.arc(w/2, h/2, Math.min(w,h)/2, 0, Math.PI * 2);
+  ctx.fill();
+
+  canvas.toBlob(async (blob) => {
+    const formData = new FormData();
+    const ext = currentFile.name.split('.').pop() || 'png';
+    formData.append('file', blob, 'avatar.' + ext);
+    try {
+      const r = await fetch(API + '/auth/profile/avatar', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData,
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || '上传失败');
+      showStatus('头像上传成功', 'success');
+      cancelCrop();
+      if (data.avatar_url) {
+        await loadAvatar(data.avatar_url + '?t=' + Date.now());
+      }
+    } catch (e) { showStatus('上传失败: ' + e.message, 'error'); }
+  }, currentFile.type, 0.92);
+}
+
+// ── 退出 ──
+function logout() {
+  if (_avatarObjectUrl) {
+    URL.revokeObjectURL(_avatarObjectUrl);
+    _avatarObjectUrl = null;
+  }
+  if (cropper) { cropper.destroy(); cropper = null; }
+  token = null;
+  localStorage.removeItem('sync_token');
+  window.location.href = '/';
+}
+
+// ── 状态提示 ──
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status-msg ' + type;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function setInlineStatus(field, msg, type) {
+  const el = document.getElementById('status-' + field);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'status-inline ' + type;
+  if (type === 'success' && msg) setTimeout(() => { el.textContent = ''; el.className = 'status-inline'; }, 4000);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');
+}
+
+// ── 账号注销 ──
+let _deleteTotpRequired = false;
+let _deleteEmailVerifiable = false;
+
+function openDeleteModal() {
+  const totpStatus = document.getElementById('p-totp-status').textContent.trim();
+  const emailHtml = document.getElementById('p-email-status').innerHTML || '';
+  _deleteTotpRequired = totpStatus === '已启用';
+  _deleteEmailVerifiable = emailHtml.includes('已验证');
+
+  document.getElementById('delete-totp-group').style.display = _deleteTotpRequired ? 'block' : 'none';
+  document.getElementById('delete-email-group').style.display = _deleteEmailVerifiable && !_deleteTotpRequired ? 'block' : 'none';
+
+  document.getElementById('delete-totp-code').value = '';
+  document.getElementById('delete-email-code').value = '';
+  document.getElementById('delete-password').value = '';
+  document.getElementById('delete-export-data').checked = true;
+  document.getElementById('status-delete').textContent = '';
+  document.getElementById('status-delete').className = 'status-inline';
+  document.getElementById('btn-send-delete-code').disabled = false;
+  document.getElementById('btn-send-delete-code').textContent = '发送验证码';
+
+  document.getElementById('delete-modal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+}
+
+async function sendDeleteCode() {
+  const btn = document.getElementById('btn-send-delete-code');
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+  try {
+    await apiCall(API + '/auth/send-delete-code?purpose=account', { method: 'POST' });
+    document.getElementById('delete-email-hint').textContent = '验证码已发送到邮箱';
+    btn.textContent = '已发送';
+  } catch (e) {
+    document.getElementById('delete-email-hint').textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = '发送验证码';
+  }
+}
+
+async function confirmDeleteAccount() {
+  const password = document.getElementById('delete-password').value;
+  if (!password) { setInlineStatus('delete', '请输入密码', 'error'); return; }
+
+  setInlineStatus('delete', '处理中...', '');
+  const btn = document.getElementById('btn-confirm-delete');
+  btn.disabled = true;
+
+  try {
+    let totpCode = null;
+    if (_deleteTotpRequired) {
+      totpCode = document.getElementById('delete-totp-code').value.trim();
+      if (!totpCode) { setInlineStatus('delete', '请输入 TOTP 验证码', 'error'); btn.disabled = false; return; }
+      await apiCall(API + '/auth/verify-delete-code', { method: 'POST', body: JSON.stringify({ code: totpCode }) });
+    }
+
+    let emailCode = null;
+    if (_deleteEmailVerifiable && !_deleteTotpRequired) {
+      emailCode = document.getElementById('delete-email-code').value.trim();
+      if (emailCode) {
+        await apiCall(API + '/auth/verify-delete-code', { method: 'POST', body: JSON.stringify({ code: emailCode }) });
+      }
+    }
+
+    const exportData = document.getElementById('delete-export-data').checked;
+    const body = { password: password, export_data: exportData };
+    if (totpCode) body.totp_code = totpCode;
+    if (emailCode) body.email_verified_code = emailCode;
+
+    await apiCall(API + '/auth/delete-account', { method: 'POST', body: JSON.stringify(body) });
+
+    if (_avatarObjectUrl) { URL.revokeObjectURL(_avatarObjectUrl); _avatarObjectUrl = null; }
+    if (cropper) { cropper.destroy(); cropper = null; }
+    token = null;
+    localStorage.removeItem('sync_token');
+    window.location.href = '/';
+  } catch (e) {
+    setInlineStatus('delete', e.message, 'error');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

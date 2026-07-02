@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>公开邀请码 - CBox</title>
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+.page-wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 0; }
+
+/* ── 顶栏 ── */
+.topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.topbar a { color: var(--primary-cyan); text-decoration: none; font-size: 14px; }
+.topbar a:hover { text-decoration: underline; }
+.topbar .title { font-size: 18px; font-weight: 700; color: var(--primary-deep); flex: 1; text-align: center; }
+
+/* ── 邀请码卡片 ── */
+.invite-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s, transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.invite-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.invite-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent-green), var(--primary-cyan));
+  border-radius: 0 2px 2px 0;
+}
+.invite-card .ic-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-deep);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.invite-card .ic-info { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.invite-card .ic-info span { display: inline-flex; align-items: center; gap: 4px; }
+.invite-card .ic-info .label { color: var(--text-light); font-weight: 500; }
+.invite-card .ic-code-row { display: flex; align-items: center; gap: 10px; }
+.invite-card .ic-code-row .ic-code { flex: 1; }
+.invite-card .copy-btn {
+  padding: 5px 14px; border: 1px solid var(--primary-cyan); border-radius: var(--radius-sm);
+  background: transparent; color: var(--primary-cyan); font-size: 12px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap; font-family: inherit; flex-shrink: 0;
+}
+.invite-card .copy-btn:hover { background: var(--primary-cyan); color: #fff; }
+
+/* ── 空状态 ── */
+.empty-state { text-align: center; padding: 60px 16px; color: var(--text-muted); font-size: 14px; }
+.empty-state .empty-icon { font-size: 28px; margin-bottom: 12px; display: block; color: var(--text-light); }
+
+/* ── 页脚 ── */
+.page-footer {
+  text-align: center; padding: 24px 0;
+  font-size: 13px; color: var(--text-muted);
+  border-top: 1px solid var(--border-light); margin-top: 8px;
+}
+.page-footer a { color: var(--primary-cyan); text-decoration: none; }
+.page-footer a:hover { text-decoration: underline; }
+.page-footer .sep { color: var(--border-light); margin: 0 6px; }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <a href="/">← 首页</a>
+    <span class="title">公开邀请码</span>
+    <span></span>
+  </div>
+
+  <!-- 说明 -->
+  <p style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:20px;">
+    选择一个邀请码注册 CBox 同步账号
+  </p>
+
+  <!-- 邀请码列表 -->
+  <div id="invite-list"></div>
+
+  <!-- 页脚 -->
+  <div class="page-footer">
+    <a href="/">返回首页</a>
+    <span class="sep">|</span>
+    <a href="/admin" target="_blank">管理后台</a>
+    <a href="/doc" target="_blank" id="doc-link" style="display:none;"><span class="sep">|</span> API 文档</a>
+  </div>
+
+</div>
+
+<script>
+// ── 加载公开邀请码 ──
+(async function() {
+  // 检查 docs 链接可见性
+  try {
+    const hr = await fetch('/health');
+    const hd = await hr.json();
+    if (hd.docs_visible !== false) {
+      document.getElementById('doc-link').style.display = 'inline';
+    }
+  } catch(e) {}
+
+  const el = document.getElementById('invite-list');
+  try {
+    const r = await fetch('/api/invite/public');
+    const d = await r.json();
+    if (!d.codes || !d.codes.length) {
+      el.innerHTML = '<div class="empty-state">暂无公开邀请码<br><span style="font-size:12px;color:var(--text-light);">请联系管理员获取邀请码</span></div>';
+      return;
+    }
+    el.innerHTML = d.codes.map(function(c) {
+      const remaining = c.max_uses === -1 ? '无限' : (c.max_uses - c.used_count) + ' 次';
+      const expiry = c.expires_at
+        ? '过期时间：' + new Date(c.expires_at).toLocaleString('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit'})
+        : '永久有效';
+      return '<div class="invite-card">' +
+        '<div class="ic-code-row">' +
+          '<span class="ic-code">' + c.code + '</span>' +
+          '<button class="copy-btn" onclick="copyCode(\'' + c.code.replace(/'/g,"\\'") + '\',this)">复制</button>' +
+        '</div>' +
+        '<div class="ic-info">' +
+          '<span>可用 ' + remaining + '</span>' +
+          '<span>' + expiry + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">加载失败<br><span style="font-size:12px;color:var(--text-light);">请稍后重试</span></div>';
+  }
+})();
+
+function copyCode(code, btn) {
+  navigator.clipboard.writeText(code).then(function() {
+    btn.textContent = '已复制';
+    btn.style.background = 'var(--primary-cyan)';
+    btn.style.color = '#fff';
+    setTimeout(function() {
+      btn.textContent = '复制';
+      btn.style.background = 'transparent';
+      btn.style.color = '';
+    }, 2000);
+  }, function() {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      btn.textContent = '已复制';
+      btn.style.background = 'var(--primary-cyan)';
+      btn.style.color = '#fff';
+      setTimeout(function() {
+        btn.textContent = '复制';
+        btn.style.background = 'transparent';
+        btn.style.color = '';
+      }, 2000);
+    } catch(e) {
+      btn.textContent = '复制失败';
+    }
+    document.body.removeChild(ta);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+services:
+  # ── MySQL 数据库（仅 profile=with-db 时启动） ──────────
+  mysql:
+    profiles: ["with-db"]
+    image: mysql:8.0
+    container_name: sync-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-password-change}
+      MYSQL_DATABASE: sync_server
+      MYSQL_USER: sync_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI 同步服务 ───────────────────────────────────
+  app:
+    build: .
+    container_name: sync-app
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - /opt/docker-data/flutter-sync-server/backup.sh:/app/backup.sh:ro
+      - /opt/docker-data/flutter-sync-server/static:/app/static:ro
+
+volumes:
+  mysql_data:

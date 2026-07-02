@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公开邀请码 — CBox 同步服务</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F0E6; --bg-card: #FCFAF5; --bg-hover: #E8E3D3;
+    --text: #3D4446; --text-dim: #5E6769;
+    --accent: #4A7A8C; --accent-dim: #2D5A6B;
+    --border: #7A9E7E; --red: #B55A5A;
+    --shadow: 0 2px 8px rgba(74,122,140,0.10);
+  }
+  [data-theme="dark"] {
+    --bg: #1E2324; --bg-card: #262C2D; --bg-hover: #2D3435;
+    --text: #D9E2E5; --text-dim: #8A9597;
+    --accent: #6A9AA8; --accent-dim: #5A8A7E;
+    --border: #3A4A4C; --red: #C07070;
+    --shadow: 0 2px 8px rgba(0,0,0,0.30);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.65; min-height:100vh; font-size:15px;
+    transition:background 0.3s,color 0.3s;
+  }
+  .container { max-width:680px; margin:0 auto; padding:40px 24px; }
+
+  /* Header */
+  header { text-align:center; padding:48px 0 32px; position:relative; }
+  header .logo svg { width:42px; height:42px; }
+  header h1 { font-size:26px; font-weight:700; color:var(--accent); margin-top:12px; }
+  header p { color:var(--text-dim); font-size:15px; margin-top:8px; }
+  .theme-btn {
+    position:absolute; top:10px; right:0;
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:20px; width:36px; height:36px;
+    cursor:pointer; font-size:16px; color:var(--text);
+    display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+  }
+  .theme-btn:hover { border-color:var(--accent); }
+
+  /* Card */
+  .card {
+    background:var(--bg-card); border:1px solid var(--border);
+    border-radius:10px; padding:24px; margin-bottom:12px;
+    box-shadow:var(--shadow); transition:border-color 0.2s;
+  }
+  .card:hover { border-color:var(--accent-dim); }
+  .card .code {
+    font-family:"SF Mono","Fira Code","Cascadia Code",monospace;
+    font-size:18px; color:var(--accent); word-break:break-all; font-weight:600;
+  }
+  .card .code-row { display:flex; align-items:center; gap:12px; }
+  .card .code-row .code-text { flex:1; }
+  .copy-btn {
+    padding:6px 14px; border:1px solid var(--accent); border-radius:6px;
+    background:transparent; color:var(--accent); font-size:13px; cursor:pointer;
+    transition:all 0.15s; white-space:nowrap; font-family:inherit;
+  }
+  .copy-btn:hover { background:var(--accent); color:#fff; }
+  .copy-btn.copied { background:var(--accent); color:#fff; }
+  .card .meta {
+    font-size:13px; color:var(--text-dim); margin-top:12px;
+    display:flex; gap:20px; flex-wrap:wrap;
+  }
+  .card .meta span { display:flex; align-items:center; gap:4px; }
+  .empty { text-align:center; padding:48px 0; color:var(--text-dim); font-size:15px; }
+  .empty .icon { font-size:40px; margin-bottom:12px; }
+
+  /* Footer */
+  footer {
+    text-align:center; padding:32px 0 20px;
+    color:var(--text-dim); font-size:13px;
+    border-top:1px solid var(--border); margin-top:8px;
+  }
+  footer a { color:var(--accent); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <button class="theme-btn" onclick="toggleTheme()" title="切换白天/黑夜模式" id="theme-btn">&#9788;</button>
+    <div class="logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="6" width="32" height="36" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="var(--bg)"/>
+        <circle cx="24" cy="19" r="5" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        <path d="M16 33c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="var(--accent)" stroke-width="2" fill="none"/>
+      </svg>
+    </div>
+    <h1>公开邀请码</h1>
+    <p>选择一个邀请码注册 CBox 同步账号</p>
+  </header>
+
+  <div id="codes"></div>
+
+  <footer>
+    <a href="/" target="_blank">← 返回首页</a> &middot;
+    <a href="/admin" target="_blank">管理后台</a>
+    <a href="/docs" target="_blank" id="docs-link" style="display:none;"> &middot; API 文档</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var t=localStorage.getItem("theme")||"light";
+  document.documentElement.setAttribute("data-theme",t);
+  document.getElementById("theme-btn").textContent=t==="light"?"\u263E":"\u2600";
+})();
+function toggleTheme(){
+  var el=document.documentElement, cur=el.getAttribute("data-theme");
+  var next=cur==="light"?"dark":"light";
+  el.setAttribute("data-theme",next);
+  document.getElementById("theme-btn").textContent=next==="light"?"\u263E":"\u2600";
+  localStorage.setItem("theme",next);
+}
+
+function copyCode(code,btn){
+  navigator.clipboard.writeText(code).then(function(){
+    btn.textContent="已复制 ✓"; btn.classList.add("copied");
+    setTimeout(function(){btn.textContent="复制";btn.classList.remove("copied");},2000);
+  },function(){
+    // Fallback
+    var ta=document.createElement("textarea");ta.value=code;ta.style.position="fixed";ta.style.left="-9999px";
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");btn.textContent="已复制 ✓";btn.classList.add("copied");
+      setTimeout(function(){btn.textContent="复制";btn.classList.remove("copied");},2000);
+    }catch(e){btn.textContent="复制失败";}
+    document.body.removeChild(ta);
+  });
+}
+
+(async function(){
+  // 检查 docs 可见性
+  try {
+    var hr = await fetch("/api/health");
+    var hd = await hr.json();
+    if (hd.docs_visible) {
+      document.getElementById("docs-link").style.display = "inline";
+    }
+  } catch(e) {}
+
+  var el=document.getElementById("codes");
+  try{
+    var r=await fetch("/api/invite/public");
+    var d=await r.json();
+    if(!d.codes||!d.codes.length){el.innerHTML='<div class="empty"><div class="icon">📭</div>暂无公开邀请码<br><span style="font-size:13px;">请联系管理员获取邀请码</span></div>';return;}
+    el.innerHTML=d.codes.map(function(c){
+      var remaining=c.max_uses===-1?'无限':(c.max_uses-c.used_count)+' 次';
+      var expiry=c.expires_at?'过期：'+new Date(c.expires_at).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'}):'永久有效';
+      return '<div class="card">'+
+        '<div class="code-row"><span class="code-text code">'+c.code+'</span>'+
+        '<button class="copy-btn" onclick="copyCode(\''+c.code.replace(/'/g,"\\'")+'\',this)">复制</button></div>'+
+        '<div class="meta"><span>🔄 可用 '+remaining+'</span><span>⏱ '+expiry+'</span></div>'+
+      '</div>';
+    }).join("");
+  }catch(e){el.innerHTML='<div class="empty"><div class="icon">⚠️</div>加载失败<br><span style="font-size:13px;">请稍后重试</span></div>';}
+})();
+</script>
+</body>
+</html>

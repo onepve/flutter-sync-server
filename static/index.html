@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBox 同步服务</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F0E6;
+    --bg-card: #FCFAF5;
+    --bg-hover: #E8E3D3;
+    --text: #3D4446;
+    --text-dim: #5E6769;
+    --accent: #4A7A8C;
+    --accent-dim: #2D5A6B;
+    --border: #7A9E7E;
+    --warm: #C8B69F;
+    --link: #4A7A8C;
+    --red: #B55A5A;
+  }
+  [data-theme="dark"] {
+    --bg: #1E2324; --bg-card: #262C2D; --bg-hover: #2D3435;
+    --text: #D9E2E5; --text-dim: #8A9597;
+    --accent: #6A9AA8; --accent-dim: #5A8A7E;
+    --border: #3A4A4C; --warm: #B8A68E; --link: #6A9AA8; --red: #C07070;
+  }
+  [data-theme="light"] {
+    --bg: #F2F0E6; --bg-card: #FCFAF5; --bg-hover: #E8E3D3;
+    --text: #3D4446; --text-dim: #5E6769;
+    --accent: #4A7A8C; --accent-dim: #2D5A6B;
+    --border: #7A9E7E; --warm: #C8B69F; --link: #4A7A8C; --red: #B55A5A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    min-height: 100vh;
+    font-size: 15px;
+    transition: background 0.3s, color 0.3s;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── Header ── */
+  header { text-align: center; padding: 60px 0 40px; position: relative; }
+  header .logo svg { width: 48px; height: 48px; }
+  header h1 {
+    font-size: 30px; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px;
+    margin-top: 16px;
+  }
+  header p { margin-top: 12px; color: var(--text-dim); font-size: 16px; }
+  .theme-btn {
+    position: absolute; top: 10px; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 20px; width: 36px; height: 36px;
+    cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; color: var(--text);
+  }
+  .theme-btn:hover { border-color: var(--accent); }
+  .badge {
+    display: inline-block; margin-top: 16px;
+    padding: 4px 14px; border-radius: 20px;
+    background: rgba(74, 122, 140, 0.10);
+    color: var(--accent); font-size: 14px;
+    border: 1px solid rgba(74, 122, 140, 0.20);
+  }
+
+  /* ── Status ── */
+  .status-bar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin: 24px 0 40px; padding: 12px; border-radius: 8px;
+    background: var(--bg-card); border: 1px solid var(--border);
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(74, 122, 140, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+  .status-bar span { font-size: 15px; color: var(--text-dim); }
+
+  /* ── Feature grid ── */
+  .features {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
+    margin-bottom: 32px;
+  }
+  @media (min-width: 900px) { .features { grid-template-columns: 1fr 1fr 1fr; } }
+  @media (max-width: 700px) { .features { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
+  .feature {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; transition: border-color 0.2s;
+  }
+  .feature:hover { border-color: var(--warm); }
+  .feature svg { width: 28px; height: 28px; margin-bottom: 10px; }
+  .feature h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .feature p { font-size: 14px; color: var(--text-dim); }
+
+  /* ── Card ── */
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; margin-bottom: 16px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .card:hover { border-color: var(--accent-dim); background: var(--bg-hover); }
+  .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
+  .card p { font-size: 15px; color: var(--text-dim); }
+  .card .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 13px;
+    margin-top: 10px; background: rgba(74, 122, 140, 0.08); color: var(--accent);
+  }
+  .card .contact {
+    margin-top: 12px; padding: 10px 14px;
+    background: rgba(200, 182, 159, 0.15);
+    border: 1px solid rgba(200, 182, 159, 0.25);
+    border-radius: 6px; font-size: 15px; color: var(--warm);
+  }
+  .card .contact a { color: var(--warm); text-decoration: underline; }
+
+  /* ── Links ── */
+  .links {
+    display: flex; gap: 12px; flex-wrap: wrap; margin: 32px 0;
+  }
+  .links a {
+    flex: 1; min-width: 160px; text-align: center;
+    padding: 14px 20px; border-radius: 8px; text-decoration: none;
+    font-size: 15px; font-weight: 500; transition: all 0.2s;
+  }
+  .links .primary { background: var(--accent); color: #1a1a1a; }
+  .links .primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+  .links .secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+  .links .secondary:hover { border-color: var(--accent-dim); color: var(--accent); transform: translateY(-1px); }
+
+  /* ── Pre ── */
+  pre {
+    background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 16px; font-size: 14px; color: var(--accent);
+    overflow-x: auto; margin-top: 8px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; padding: 40px 0 20px;
+    color: var(--text-dim); font-size: 14px;
+    border-top: 1px solid var(--border); margin-top: 20px;
+  }
+  footer a { color: var(--link); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <button class="theme-btn" onclick="toggleTheme()" title="切换白天/黑夜模式" id="theme-btn">&#9788;</button>
+    <div class="logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="6" width="32" height="36" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="var(--bg)"/>
+        <circle cx="24" cy="19" r="5" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        <path d="M16 33c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="var(--accent)" stroke-width="2" fill="none"/>
+        <line x1="14" y1="2" x2="14" y2="10" stroke="var(--accent-dim)" stroke-width="1.5"/>
+        <line x1="34" y1="2" x2="34" y2="10" stroke="var(--accent-dim)" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <h1>CBox 同步服务</h1>
+    <p>CBox 跨平台云同步后端 — 端到端加密，支持多用户管理</p>
+    <div class="badge" id="version-badge">加载中...</div>
+  </header>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">检测中...</span>
+  </div>
+
+  <!-- Feature cards — now 3-column on desktop -->
+  <div class="features">
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="5" width="22" height="18" rx="3" stroke="var(--accent)" stroke-width="1.8"/>
+        <path d="M14 10v6M11 13h6" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="14" cy="16" r="8" stroke="var(--warm)" stroke-width="1.5" fill="none"/>
+      </svg>
+      <h4>AES-256-GCM 加密</h4>
+      <p>同步数据使用 AES-256-GCM 加密，密钥派生自用户 UUID，服务端无法解密</p>
+    </div>
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="9" cy="9" r="4" stroke="var(--accent)" stroke-width="1.8"/>
+        <circle cx="19" cy="9" r="4" stroke="var(--accent)" stroke-width="1.8"/>
+        <path d="M3 24c0-4 2.5-7 6-7" stroke="var(--accent)" stroke-width="1.8"/>
+        <path d="M19 17c3.5 0 6 3 6 7" stroke="var(--accent)" stroke-width="1.8"/>
+        <path d="M9 17c4 0 6 3 6 7" stroke="var(--warm)" stroke-width="1.5"/>
+      </svg>
+      <h4>多用户 + 邀请码</h4>
+      <p>邀请码注册机制，管理员可控的访问管理</p>
+    </div>
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="10" width="20" height="14" rx="2" stroke="var(--accent)" stroke-width="1.8"/>
+        <path d="M9 10V7a5 5 0 0 1 10 0v3" stroke="var(--accent)" stroke-width="1.8"/>
+        <circle cx="14" cy="18" r="2" fill="var(--accent)"/>
+      </svg>
+      <h4>TOTP 双因素认证</h4>
+      <p>支持 TOTP 两步验证，为账号安全加锁</p>
+    </div>
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="9" height="9" rx="1.5" stroke="var(--accent)" stroke-width="1.5"/>
+        <rect x="16" y="4" width="9" height="9" rx="1.5" stroke="var(--accent)" stroke-width="1.5"/>
+        <rect x="3" y="16" width="9" height="9" rx="1.5" stroke="var(--accent)" stroke-width="1.5"/>
+        <rect x="16" y="16" width="9" height="9" rx="1.5" stroke="var(--accent)" stroke-width="1.5"/>
+      </svg>
+      <h4>跨平台同步</h4>
+      <p>Flutter 驱动，iOS / Android / 桌面端无缝同步</p>
+    </div>
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 3v12l4 4" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="14" cy="14" r="11" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M7 14h14" stroke="var(--warm)" stroke-width="1.2" stroke-dasharray="2 2"/>
+      </svg>
+      <h4>自动备份</h4>
+      <p>定时备份任务，数据安全保障</p>
+    </div>
+    <div class="feature">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 2C7.373 2 2 7.373 2 14s5.373 12 12 12 12-5.373 12-12S20.627 2 14 2z" stroke="var(--accent)" stroke-width="1.5" fill="none"/>
+        <path d="M14 8v8M14 18v2" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h4>自托管</h4>
+      <p>数据完全由你掌控，不依赖第三方云服务</p>
+    </div>
+  </div>
+
+  <!-- Quick links -->
+  <div class="links">
+    <a href="/invite" target="_blank" class="secondary">公开邀请码</a>
+    <!-- DOCS_LINK -->
+    <a href="/admin" target="_blank" class="secondary">管理后台</a>
+  </div>
+
+  <!-- Repos -->
+  <div class="card" style="margin-top:20px;">
+    <h3>📦 开源仓库</h3>
+    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:14px;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 8px;color:var(--text-dim);">🔧 服务端</td>
+        <td style="padding:10px 8px;">
+          <a href="https://github.com/onepve/flutter-sync-server" target="_blank" style="color:var(--link);">
+            onepve/flutter-sync-server
+          </a>
+        </td>
+        <td style="padding:10px 8px;color:var(--text-dim);">FastAPI + MySQL + Docker</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 8px;color:var(--text-dim);">📱 客户端</td>
+        <td style="padding:10px 8px;">
+          <a href="https://github.com/onepve/flutter_server_box" target="_blank" style="color:var(--link);">
+            onepve/flutter_server_box
+          </a>
+        </td>
+        <td style="padding:10px 8px;color:var(--text-dim);">Flutter 跨平台 App</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 8px;color:var(--text-dim);">👤 原作者</td>
+        <td style="padding:10px 8px;">
+          <a href="https://github.com/lollipopkit/flutter_server_box" target="_blank" style="color:var(--link);">
+            lollipopkit/flutter_server_box
+          </a>
+        </td>
+        <td style="padding:10px 8px;color:var(--text-dim);">上游项目 · 致谢 ❤️</td>
+      </tr>
+    </table>
+    <div class="contact">
+      &#9993; 联系管理员：<a href="mailto:onepve@outlook.com">onepve@outlook.com</a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>CBox 同步服务 &middot; AGPL v3 开源协议</p>
+    <p style="margin-top:8px;">运行于 Docker &middot; Ubuntu &middot; Oracle ARM</p>
+    <p style="margin-top:8px;font-size:13px;color:var(--text-dim);">
+      AI 辅助开发: Hermes + deepseek-v4-flash
+    </p>
+  </footer>
+
+</div>
+
+<script>
+// ── Theme ──
+(function(){
+  var t = localStorage.getItem("theme")||"light";
+  document.documentElement.setAttribute("data-theme",t);
+  document.getElementById("theme-btn").textContent = t==="light"?"\u263E":"\u2600";
+})();
+function toggleTheme(){
+  var el=document.documentElement, cur=el.getAttribute("data-theme");
+  var next=cur==="light"?"dark":"light";
+  el.setAttribute("data-theme",next);
+  document.getElementById("theme-btn").textContent = next==="light"?"\u263E":"\u2600";
+  localStorage.setItem("theme",next);
+}
+
+// ── 动态检测服务状态和版本 ──
+(async function(){
+  try {
+    var r = await fetch("/api/health");
+    var d = await r.json();
+    document.getElementById("status-text").textContent = "服务运行中 · " + (d.status||"正常");
+    document.getElementById("version-badge").textContent = "v" + (d.version||"?") + " · CBox 同步服务";
+  } catch(e) {
+    document.getElementById("status-dot").style.background = "var(--red)";
+    document.getElementById("status-text").textContent = "服务异常";
+    document.getElementById("version-badge").textContent = "CBox 同步服务";
+  }
+})();
+</script>
+</body>
+</html>

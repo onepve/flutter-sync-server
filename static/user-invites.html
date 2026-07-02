@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>我的邀请码 - CBox</title>
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+.page-wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 0; }
+
+/* 邀请码卡片 */
+.invite-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: box-shadow 0.2s;
+}
+.invite-card:hover { box-shadow: var(--shadow-xs); }
+.invite-card .ic-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.invite-card .ic-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-deep);
+  letter-spacing: 1px;
+  background: var(--primary-light);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  word-break: break-all;
+}
+.invite-card .ic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.invite-card .ic-info { display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.invite-card .ic-info span { display: inline-flex; align-items: center; gap: 4px; }
+.invite-card .ic-info .label { color: var(--text-light); }
+
+/* 创建区域 */
+.create-area {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.create-area h3 { font-size: 14px; font-weight: 700; color: var(--primary-deep); margin-bottom: 10px; }
+.create-area .create-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* 剩余次数提示 */
+.remain-note { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 48px 16px; color: var(--text-muted); font-size: 13px; }
+
+/* 提示 */
+.note-box { background: var(--bg-page); border-left: 3px solid var(--primary-cyan); padding: 10px 14px; border-radius: 4px; font-size: 12px; color: var(--text-light); margin: 12px 0; }
+
+/* 确认弹窗 */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-overlay .modal { background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; max-width: 380px; width: 90%; box-shadow: var(--shadow-lg); position: relative; }
+.modal-overlay .modal .close { position: absolute; top: 10px; right: 14px; font-size: 18px; cursor: pointer; color: var(--text-muted); background: none; border: none; }
+.modal-overlay .modal h3 { font-size: 15px; color: var(--primary-deep); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/">← 首页</a>
+  <span class="title">我的邀请码</span>
+  <div class="topbar-right">
+    <a href="/profile">个人资料</a>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- 提示 -->
+  <div class="note-box">
+    创建邀请码用于邀请新用户注册，每个邀请码仅可使用一次，过期时间为 30 天。已使用的邀请码无法删除。
+  </div>
+
+  <!-- 创建邀请码 -->
+  <div class="create-area" id="create-area">
+    <h3>创建新邀请码</h3>
+    <div class="create-form">
+      <button class="btn btn-primary" onclick="createInvite()">生成邀请码</button>
+    </div>
+    <div id="create-msg" style="font-size:12px;margin-top:6px;color:var(--text-muted);"></div>
+    <div id="remain-note" class="remain-note"></div>
+  </div>
+
+  <!-- 邀请码列表 -->
+  <div id="invite-list">
+    <p class="empty-state">加载中...</p>
+  </div>
+
+  <div class="pagination" id="invite-pagination"></div>
+
+</div>
+
+<!-- ===== 确认删除弹窗 ===== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <button class="close" onclick="closeModal('confirm-modal')">x</button>
+    <h3 id="confirm-title">确认操作</h3>
+    <p id="confirm-msg" style="font-size:13px;color:var(--text-light);margin-bottom:16px;"></p>
+    <div style="text-align:right;gap:8px;display:flex;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('confirm-modal')">取消</button>
+      <button class="btn btn-danger btn-sm" id="confirm-btn">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let TOKEN = localStorage.getItem('sync_token');
+let currentPage = 1;
+let maxInvitesPerUser = 5;
+
+if (!TOKEN) {
+  window.location.href = '/';
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');
+}
+
+function dateStr(d) {
+  if (!d) return '--';
+  try { return new Date(d).toLocaleString('zh-CN'); } catch(e) { return String(d); }
+}
+
+function toast(msg, type) {
+  type = type || 'info';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// 点击弹窗外部关闭
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.modal-overlay.show').forEach(m => {
+    if (e.target === m) m.classList.remove('show');
+  });
+});
+
+function showConfirm(title, message, callback) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = message;
+  const btn = document.getElementById('confirm-btn');
+  btn.onclick = function() {
+    closeModal('confirm-modal');
+    if (typeof callback === 'function') callback();
+  };
+  showModal('confirm-modal');
+}
+
+async function api(url, opts = {}) {
+  const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json', ...opts.headers };
+  const r = await fetch(API_BASE + url, { ...opts, headers: headers });
+  if (r.status === 401) {
+    localStorage.removeItem('sync_token');
+    window.location.href = '/';
+    throw new Error('登录已过期');
+  }
+  if (!r.ok) {
+    let detail = '请求失败 (' + r.status + ')';
+    try { const d = await r.json(); if (d.detail) detail = d.detail; } catch(e) {}
+    throw new Error(detail);
+  }
+  return r.json();
+}
+
+// 加载系统设置，获取 max_invites_per_user
+async function loadConfig() {
+  try {
+    const cfg = await api('/auth/config');
+    if (cfg.max_invites_per_user !== undefined) {
+      maxInvitesPerUser = cfg.max_invites_per_user;
+    }
+  } catch (e) {
+    console.warn('加载系统配置失败', e.message);
+  }
+}
+
+// 更新剩余可创建次数
+async function updateRemainNote() {
+  try {
+    const d = await api('/invite/user-list?page=1&page_size=1000');
+    const codes = d.invites || d.codes || d.items || [];
+    const activeCount = codes.filter(c => !c.is_locked && c.used_count < c.max_uses && (!c.expires_at || new Date(c.expires_at) > new Date())).length;
+    const remaining = Math.max(0, maxInvitesPerUser - activeCount);
+    const el = document.getElementById('remain-note');
+    if (maxInvitesPerUser > 0) {
+      el.textContent = '你当前有 ' + activeCount + '/' + maxInvitesPerUser + ' 个有效邀请码，还可创建 ' + remaining + ' 个';
+    } else {
+      el.textContent = '邀请码数量无限制';
+    }
+  } catch (e) {
+    document.getElementById('remain-note').textContent = '';
+  }
+}
+
+async function loadInvites(page) {
+  if (page !== undefined) currentPage = page;
+  const el = document.getElementById('invite-list');
+  el.innerHTML = '<p class="empty-state">加载中...</p>';
+
+  try {
+    const d = await api('/invite/user-list?page=' + currentPage + '&page_size=20');
+    const codes = d.invites || d.codes || d.items || [];
+    if (!codes.length) {
+      el.innerHTML = '<p class="empty-state">你还没有创建过邀请码</p>';
+      document.getElementById('invite-pagination').innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = codes.map(c => {
+      const usedStr = (c.used_count || 0) + '/' + (c.max_uses || 1);
+      let statusHtml = '<span class="badge badge-green">可用</span>';
+      if (c.is_locked) {
+        statusHtml = '<span class="badge badge-red">已锁定</span>';
+      } else if (c.used_count >= c.max_uses) {
+        statusHtml = '<span class="badge badge-gray">已用完</span>';
+      } else if (c.expires_at && new Date(c.expires_at) < new Date()) {
+        statusHtml = '<span class="badge badge-gray">已过期</span>';
+      }
+
+      let deleteBtn = '';
+      if (c.used_count === 0 && !c.is_locked) {
+        deleteBtn = '<button class="btn btn-danger btn-sm" onclick="deleteInvite(\'' + c.code + '\')">删除</button>';
+      }
+
+      return '<div class="invite-card">' +
+        '<div class="ic-top">' +
+          '<span class="ic-code">' + esc(c.code) + '</span>' +
+          '<div class="ic-actions">' + deleteBtn + '</div>' +
+        '</div>' +
+        '<div class="ic-info">' +
+          '<span><span class="label">使用情况:</span> ' + usedStr + '</span>' +
+          '<span><span class="label">状态:</span> ' + statusHtml + '</span>' +
+          '<span><span class="label">过期:</span> ' + (c.expires_at ? dateStr(c.expires_at) : '不过期') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    const total = d.total || codes.length;
+    const pages = Math.ceil(total / 20);
+    renderPagination(pages, currentPage, p => loadInvites(p));
+  } catch (e) {
+    el.innerHTML = '<p class="empty-state" style="color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function createInvite() {
+  const msgEl = document.getElementById('create-msg');
+  msgEl.textContent = '创建中...';
+  msgEl.style.color = 'var(--text-muted)';
+
+  const body = { max_uses: 1 };
+
+  try {
+    await api('/invite/user-create', { method: 'POST', body: JSON.stringify(body) });
+    msgEl.textContent = '邀请码已创建（30天有效）';
+    msgEl.style.color = 'var(--accent-green)';
+    toast('邀请码已创建', 'success');
+    loadInvites();
+    updateRemainNote();
+  } catch (e) {
+    msgEl.textContent = '创建失败: ' + e.message;
+    msgEl.style.color = 'var(--btn-danger)';
+    toast('创建失败', 'error');
+  }
+}
+
+async function deleteInvite(code) {
+  showConfirm('确认操作', '确定删除邀请码 ' + code + '？', async function() {
+    try {
+      await api('/invite/user-delete', { method: 'DELETE', body: JSON.stringify({ code: code }) });
+      toast('邀请码已删除', 'success');
+      loadInvites();
+      updateRemainNote();
+    } catch (e) {
+      toast('删除失败: ' + e.message, 'error');
+    }
+  });
+}
+
+function renderPagination(pages, current, onClick) {
+  const el = document.getElementById('invite-pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  if (current > 1) html += '<button onclick="callWith(' + (current - 1) + ')">上一页</button>';
+  let start = Math.max(1, current - 3);
+  let end = Math.min(pages, current + 3);
+  if (end - start < 6) {
+    if (start === 1) end = Math.min(pages, start + 6);
+    else start = Math.max(1, end - 6);
+  }
+  if (start > 1) html += '<button onclick="callWith(1)">1</button>' + (start > 2 ? '<button disabled>...</button>' : '');
+  for (let i = start; i <= end; i++) {
+    html += '<button class="' + (i === current ? 'active' : '') + '" onclick="callWith(' + i + ')">' + i + '</button>';
+  }
+  if (end < pages) html += (end < pages - 1 ? '<button disabled>...</button>' : '') + '<button onclick="callWith(' + pages + ')">' + pages + '</button>';
+  if (current < pages) html += '<button onclick="callWith(' + (current + 1) + ')">下一页</button>';
+  el.innerHTML = html;
+  window._paginationCallback = onClick;
+}
+
+function callWith(page) {
+  if (window._paginationCallback) window._paginationCallback(page);
+}
+
+// 启动
+(async function() {
+  await loadConfig();
+  await loadInvites();
+  await updateRemainNote();
+})();
+</script>
+</body>
+</html>

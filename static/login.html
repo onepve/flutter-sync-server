@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CBox 登录</title>
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+/* ── 登录页专属 ── */
+.login-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.login-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-family: inherit;
+  transition: var(--transition);
+  border-bottom: 2px solid transparent;
+}
+.login-tab:hover {
+  color: var(--primary-deep);
+}
+.login-tab.active {
+  color: var(--primary-deep);
+  font-weight: 700;
+  border-bottom-color: var(--primary-cyan);
+}
+.login-form {
+  display: none;
+}
+.login-form.active {
+  display: block;
+}
+.form-divider {
+  text-align: center;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  position: relative;
+}
+.form-divider::before,
+.form-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: var(--border-light);
+}
+.form-divider::before { left: 0; }
+.form-divider::after { right: 0; }
+.totp-section {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+.totp-section.open {
+  display: block;
+}
+.totp-section .totp-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.register-nickname-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.invite-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.invite-toggle label {
+  font-size: 13px;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.invite-toggle input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--primary-cyan);
+}
+#invite-code-group {
+  display: none;
+}
+.success-screen {
+  text-align: center;
+  padding: 20px 0;
+}
+.success-screen .success-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--btn-success-bg);
+  color: var(--accent-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.success-screen h3 {
+  font-size: 18px;
+  color: var(--primary-deep);
+  margin-bottom: 8px;
+}
+.success-screen p {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+.recovery-key-box {
+  background: rgba(200, 159, 60, 0.1);
+  border: 1px solid var(--btn-warning);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin: 12px 0;
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 14px;
+  color: var(--btn-warning);
+  word-break: break-all;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <h2>CBox 同步服务</h2>
+    <p class="login-subtitle">登录或创建账号</p>
+
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchLoginTab('login')">登录</button>
+      <button class="login-tab" onclick="switchLoginTab('register')">注册</button>
+    </div>
+
+    <!-- 登录表单 -->
+    <div class="login-form active" id="form-login">
+      <div class="form-group">
+        <label>用户名或邮箱</label>
+        <input type="text" id="login-user" placeholder="输入用户名或邮箱" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-pass" placeholder="输入密码" autocomplete="current-password">
+      </div>
+
+      <div class="totp-section" id="totp-section">
+        <div class="totp-hint">此账号已启用双因素认证，请输入 TOTP 验证码</div>
+        <div class="form-group">
+          <label>TOTP 验证码</label>
+          <input type="text" id="login-totp" placeholder="6 位数字" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="doLogin()">登录</button>
+      <div class="login-error" id="login-error"></div>
+      <div class="login-link">
+        <a href="/">← 返回首页</a>
+      </div>
+    </div>
+
+    <!-- 注册表单 -->
+    <div class="login-form" id="form-register">
+      <div class="form-group">
+        <label>用户名 *</label>
+        <input type="text" id="reg-user" placeholder="用户名（必填）" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码 *</label>
+        <input type="password" id="reg-pass" placeholder="密码（必填）" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>昵称（可选）</label>
+        <input type="text" id="reg-nickname" placeholder="显示昵称">
+        <div class="register-nickname-hint">不填写则使用用户名</div>
+      </div>
+      <div class="form-group">
+        <label>邮箱（可选）</label>
+        <input type="email" id="reg-email" placeholder="邮箱地址">
+      </div>
+
+      <div class="invite-toggle" id="invite-toggle-wrap" style="display:none;">
+        <input type="checkbox" id="reg-has-invite" onclick="toggleInviteField()">
+        <label for="reg-has-invite">我有邀请码</label>
+      </div>
+      <div class="form-group" id="invite-code-group">
+        <label>邀请码</label>
+        <input type="text" id="reg-invite" placeholder="输入邀请码">
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="doRegister()">注册</button>
+      <div class="login-error" id="reg-error"></div>
+      <div class="login-link">
+        <a href="/">← 返回首页</a>
+      </div>
+    </div>
+
+    <!-- 注册成功 -->
+    <div class="success-screen" id="reg-success" style="display:none;">
+      <div class="success-icon">&#10003;</div>
+      <h3>注册成功</h3>
+      <p id="reg-success-msg">账号已创建，请妥善保管你的 Recovery Key</p>
+      <div class="recovery-key-box" id="recovery-key-display" style="display:none;"></div>
+      <button class="btn btn-primary" onclick="goToProfile()">进入个人资料</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api';
+
+// ── 初始化：根据后端配置决定是否显示邀请码字段 ──
+let authConfig = null;
+(async function initLogin() {
+  try {
+    const r = await fetch(API + '/auth/config');
+    if (r.ok) {
+      authConfig = await r.json();
+      const wrap = document.getElementById('invite-toggle-wrap');
+      if (authConfig.require_invite_for_registration) {
+        // 强制需要邀请码 — 直接显示输入框，不显示 toggle
+        wrap.style.display = 'none';
+        document.getElementById('invite-code-group').style.display = 'block';
+        document.getElementById('reg-invite').required = true;
+      } else if (authConfig.allow_user_create_invite !== false) {
+        // 可选邀请码 — 显示 toggle
+        wrap.style.display = 'flex';
+      }
+      // 如果 allow_user_create_invite 为 false 且 require_invite 为 false，则无邀请码系统
+    }
+  } catch (e) { /* 配置加载失败，使用默认行为 */ }
+})();
+
+function toggleInviteField() {
+  const checked = document.getElementById('reg-has-invite').checked;
+  document.getElementById('invite-code-group').style.display = checked ? 'block' : 'none';
+}
+
+function switchLoginTab(tab) {
+  document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+  document.querySelector(`.login-tab[onclick*="'${tab}'"]`).classList.add('active');
+  document.getElementById('form-' + tab).classList.add('active');
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+  document.getElementById('totp-section').classList.remove('open');
+}
+
+// ── 登录 ──
+async function doLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  if (!user || !pass) {
+    errEl.textContent = '请输入用户名和密码';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const body = { username: user, password: pass };
+
+  // 如果 TOTP 区域可见且有值，发送 TOTP 码
+  const totpSection = document.getElementById('totp-section');
+  const totpCode = document.getElementById('login-totp').value.trim();
+  if (totpSection.classList.contains('open') && totpCode) {
+    body.totp_code = totpCode;
+  }
+
+  try {
+    const r = await fetch(API + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      // 如果返回需要 TOTP
+      if (data.detail && data.detail.includes('TOTP')) {
+        totpSection.classList.add('open');
+        errEl.textContent = '请输入 TOTP 验证码';
+        errEl.style.display = 'block';
+        return;
+      }
+      throw new Error(data.detail || '登录失败');
+    }
+    // 登录成功
+    localStorage.setItem('sync_token', data.access_token);
+    // 跳转到首页
+    window.location.href = '/';
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// ── 注册 ──
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const nickname = document.getElementById('reg-nickname').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const errEl = document.getElementById('reg-error');
+
+  if (!username || !password) {
+    errEl.textContent = '用户名和密码为必填项';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const body = { username, password };
+  if (nickname) body.nickname = nickname;
+  if (email) body.email = email;
+
+  // 判断是否需要邀请码
+  if (authConfig && authConfig.require_invite_for_registration) {
+    const inviteCode = document.getElementById('reg-invite').value.trim();
+    if (!inviteCode) {
+      errEl.textContent = '此系统需要邀请码才能注册';
+      errEl.style.display = 'block';
+      return;
+    }
+    body.invite_code = inviteCode;
+  } else if (document.getElementById('reg-has-invite') &&
+             document.getElementById('reg-has-invite').checked) {
+    const inviteCode = document.getElementById('reg-invite').value.trim();
+    if (inviteCode) body.invite_code = inviteCode;
+  }
+
+  try {
+    const r = await fetch(API + '/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      throw new Error(data.detail || '注册失败');
+    }
+
+    // 注册成功
+    document.getElementById('form-register').style.display = 'none';
+    const successEl = document.getElementById('reg-success');
+    successEl.style.display = 'block';
+
+    if (data.access_token) {
+      localStorage.setItem('sync_token', data.access_token);
+    }
+
+    let msg = '账号 ' + username + ' 已创建';
+    if (data.recovery_key) {
+      msg += '，请立即备份你的 Recovery Key';
+      document.getElementById('recovery-key-display').textContent = data.recovery_key;
+      document.getElementById('recovery-key-display').style.display = 'block';
+    }
+    document.getElementById('reg-success-msg').textContent = msg;
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function goToProfile() {
+  window.location.href = '/profile';
+}
+
+// ── 回车键提交 ──
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const activeForm = document.querySelector('.login-form.active');
+    if (activeForm && activeForm.id === 'form-login') doLogin();
+    else if (activeForm && activeForm.id === 'form-register') doRegister();
+  }
+});
+</script>
+</body>
+</html>

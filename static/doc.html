@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CBox API 文档</title>
+<link rel="stylesheet" href="/static/theme.css">
+<style>
+.doc-section + .doc-section { margin-top: 16px; }
+.doc-section h3 { font-size: 15px; color: var(--primary-deep); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-light); }
+.doc-section h3 .badge-sub { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+.doc-section table td code { font-size: 12px; word-break: break-all; }
+.note-box { background: var(--bg-page); border-left: 3px solid var(--primary-cyan); padding: 10px 14px; border-radius: 4px; font-size: 13px; color: var(--text-light); margin: 8px 0; }
+.page-footer { text-align: center; padding: 20px 0 32px; font-size: 12px; color: var(--text-muted); }
+.page-footer a { color: var(--primary-cyan); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/">← 首页</a>
+  <span class="title">API 文档</span>
+  <div class="topbar-right">
+    <a href="/profile">个人资料</a>
+    <a href="https://github.com/onepve/flutter-sync-server" target="_blank">GitHub</a>
+  </div>
+</div>
+
+<div class="container" style="max-width:860px;padding-top:24px;">
+
+  <h1 class="page-title">CBox 云同步服务</h1>
+  <p class="page-subtitle" style="margin-bottom:24px;">CBox 跨设备数据同步后端 — 完整 API 参考（51 端点）</p>
+
+  <!-- 认证说明 -->
+  <div class="card">
+    <div class="section-title">认证</div>
+    <p>所有需要认证的接口需要在请求头中携带 <code>Authorization: Bearer &lt;token&gt;</code>，token 通过登录获取 JWT。</p>
+    <div class="note-box">未登录用户只能访问注册、登录、公共配置、密码重置等公开接口。</div>
+  </div>
+
+  <!-- 公开接口 -->
+  <div class="card">
+    <div class="section-title">公开接口（无需认证）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/health</code></td><td>GET</td><td>健康检查</td></tr>
+          <tr><td><code>/api/auth/register</code></td><td>POST</td><td>用户注册（需邀请码）</td></tr>
+          <tr><td><code>/api/auth/login</code></td><td>POST</td><td>用户登录，返回 JWT token</td></tr>
+          <tr><td><code>/api/invite/public</code></td><td>GET</td><td>获取公开邀请码</td></tr>
+          <tr><td><code>/api/auth/forgot-password</code></td><td>POST</td><td>忘记密码，发送重置邮件</td></tr>
+          <tr><td><code>/api/auth/reset-password</code></td><td>POST</td><td>重置密码（需 token）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 同步接口 -->
+  <div class="card">
+    <div class="section-title">数据同步（需认证）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/sync/upload</code></td><td>POST</td><td>上传同步数据（AES 加密后）</td></tr>
+          <tr><td><code>/api/sync/download</code></td><td>GET</td><td>下载所有同步数据</td></tr>
+          <tr><td><code>/api/sync/status</code></td><td>GET</td><td>获取同步状态摘要</td></tr>
+          <tr><td><code>/api/sync/delta</code></td><td>POST</td><td>增量同步（返回变更数据）</td></tr>
+          <tr><td><code>/api/sync/clear</code></td><td>DELETE</td><td>清空所有同步数据</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 个人资料 -->
+  <div class="card">
+    <div class="section-title">个人资料（需认证）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/auth/profile</code></td><td>GET</td><td>获取个人信息</td></tr>
+          <tr><td><code>/api/auth/profile/nickname</code></td><td>PUT</td><td>修改昵称</td></tr>
+          <tr><td><code>/api/auth/profile/username</code></td><td>PUT</td><td>修改用户名（重签 token）</td></tr>
+          <tr><td><code>/api/auth/profile/email</code></td><td>PUT</td><td>修改邮箱</td></tr>
+          <tr><td><code>/api/auth/profile/password</code></td><td>PUT</td><td>修改密码</td></tr>
+          <tr><td><code>/api/auth/profile/avatar</code></td><td>POST</td><td>上传头像（FormData）</td></tr>
+          <tr><td><code>/api/auth/profile/avatar/image</code></td><td>GET</td><td>获取头像图片（JWT）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOTP -->
+  <div class="card">
+    <div class="section-title">TOTP 双因素（需认证）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/auth/totp/setup</code></td><td>POST</td><td>获取 TOTP 密钥和二维码</td></tr>
+          <tr><td><code>/api/auth/totp/verify</code></td><td>POST</td><td>验证并启用 TOTP</td></tr>
+          <tr><td><code>/api/auth/totp/disable</code></td><td>POST</td><td>关闭 TOTP</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 账号注销 -->
+  <div class="card">
+    <div class="section-title">账号管理（需认证）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/auth/send-delete-code</code></td><td>POST</td><td>发送注销验证码</td></tr>
+          <tr><td><code>/api/auth/verify-delete-code</code></td><td>POST</td><td>验证注销码/TOTP</td></tr>
+          <tr><td><code>/api/auth/delete-account</code></td><td>POST</td><td>注销账号</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 邀请码 -->
+  <div class="card">
+    <div class="section-title">邀请码</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/invite/public</code></td><td>GET</td><td>公开邀请码（无需认证）</td></tr>
+          <tr><td><code>/api/invite/create</code></td><td>POST</td><td>管理员创建邀请码</td></tr>
+          <tr><td><code>/api/invite/batch</code></td><td>POST</td><td>管理员批量创建</td></tr>
+          <tr><td><code>/api/invite/list</code></td><td>GET</td><td>邀请码列表（管理员）</td></tr>
+          <tr><td><code>/api/invite/lock</code></td><td>PATCH</td><td>锁定/解锁邀请码</td></tr>
+          <tr><td><code>/api/invite/reset</code></td><td>POST</td><td>复用邀请码（重置次数）</td></tr>
+          <tr><td><code>/api/invite/delete</code></td><td>DELETE</td><td>删除邀请码</td></tr>
+          <tr><td><code>/api/invite/user-create</code></td><td>POST</td><td>普通用户创建邀请码</td></tr>
+          <tr><td><code>/api/invite/user-list</code></td><td>GET</td><td>用户查看自己的邀请码</td></tr>
+          <tr><td><code>/api/invite/user-delete</code></td><td>DELETE</td><td>用户删除自己的邀请码</td></tr>
+          <tr><td><code>/api/invite/export</code></td><td>GET</td><td>导出邀请码 CSV（管理员）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 管理后台 -->
+  <div class="card">
+    <div class="section-title">管理后台（管理员）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:180px;">端点</th><th>方法</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>/api/admin/stats</code></td><td>GET</td><td>系统统计</td></tr>
+          <tr><td><code>/api/admin/users</code></td><td>GET</td><td>用户列表（分页/搜索/筛选）</td></tr>
+          <tr><td><code>/api/admin/user/lock</code></td><td>POST</td><td>锁定/解锁用户</td></tr>
+          <tr><td><code>/api/admin/user/delete</code></td><td>POST</td><td>删除用户（可选导出）</td></tr>
+          <tr><td><code>/api/admin/user/totp-clear</code></td><td>POST</td><td>清除用户 TOTP</td></tr>
+          <tr><td><code>/api/admin/user/totp-bind-setup</code></td><td>POST</td><td>协助用户绑定 TOTP 第一步</td></tr>
+          <tr><td><code>/api/admin/user/totp-bind-confirm</code></td><td>POST</td><td>确认用户 TOTP 绑定</td></tr>
+          <tr><td><code>/api/admin/config</code></td><td>GET|PUT</td><td>系统配置</td></tr>
+          <tr><td><code>/api/admin/logs</code></td><td>GET</td><td>审计日志</td></tr>
+          <tr><td><code>/api/admin/logs/clear</code></td><td>DELETE</td><td>清空审计日志</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <a href="/">← 返回首页</a>
+  </div>
+</div>
+
+</body>
+</html>
