@@ -113,6 +113,17 @@
 
 /* 操作反馈 */
 .action-msg { font-size: 12px; padding: 4px 0; color: var(--text-muted); }
+
+/* 主题选择器 */
+.theme-select {
+  padding: 4px 8px; border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); background: var(--glass-bg);
+  color: var(--text-main); font-size: 13px; cursor: pointer;
+  backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+  outline: none; transition: var(--transition);
+}
+.theme-select:hover { border-color: var(--primary); }
+.theme-select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
 </style>
 </head>
 <body>
@@ -138,13 +149,23 @@
     <a href="/">← 首页</a>
     <span class="title">管理面板</span>
     <div class="topbar-right">
+      <select id="theme-selector" onchange="setTheme(this.value)" class="theme-select" title="切换主题">
+        <option value="light">☀ 白天</option>
+        <option value="dark">🌙 黑夜</option>
+        <option value="auto">🖥 自动</option>
+      </select>
       <div class="dropdown" id="admin-dropdown">
         <div class="avatar-btn" onclick="toggleDropdown()">
           <span id="admin-avatar-area"><span class="avatar-placeholder" id="avatar-placeholder">管</span></span>
           <span id="admin-name" style="font-size:13px;font-weight:500;color:var(--text-main);">加载中</span>
         </div>
         <div class="dropdown-menu" id="admin-dropdown-menu">
-          <div class="dropdown-item" onclick="openAdminProfileModal()">修改资料</div>
+          <div class="dropdown-item" onclick="openAvatarModal()">修改头像</div>
+          <div class="dropdown-item" onclick="openNicknameModal()">修改昵称</div>
+          <div class="dropdown-item" onclick="openEmailModal()">修改邮箱</div>
+          <div class="dropdown-item" onclick="openPasswordModal()">修改密码</div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="openDeleteAccountModal()">注销账户</div>
           <div class="dropdown-divider"></div>
           <div class="dropdown-item danger" onclick="logout()">退出登录</div>
         </div>
@@ -554,7 +575,132 @@
   </div>
 </div>
 
+<!-- ===== 独立快速编辑弹窗 ===== -->
+<!-- 修改昵称 -->
+<div class="modal-overlay" id="quick-nickname-modal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close" onclick="closeModal('quick-nickname-modal')">x</button>
+    <h3>修改昵称</h3>
+    <div class="form-group">
+      <input type="text" id="quick-nickname" placeholder="输入新昵称" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('quick-nickname-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="quickSaveNickname()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改邮箱 -->
+<div class="modal-overlay" id="quick-email-modal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close" onclick="closeModal('quick-email-modal')">x</button>
+    <h3>修改邮箱</h3>
+    <div class="form-group">
+      <label>当前邮箱</label>
+      <div id="quick-email-current" style="font-size:13px;color:var(--text-muted);margin-bottom:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label>新邮箱</label>
+      <input type="email" id="quick-email" placeholder="新邮箱地址" style="width:100%;">
+    </div>
+    <div class="form-group">
+      <label>密码确认</label>
+      <input type="password" id="quick-email-password" placeholder="输入当前密码" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('quick-email-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="quickSaveEmail()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改密码 -->
+<div class="modal-overlay" id="quick-password-modal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close" onclick="closeModal('quick-password-modal')">x</button>
+    <h3>修改密码</h3>
+    <div class="form-group">
+      <input type="password" id="quick-old-password" placeholder="当前密码" style="width:100%;margin-bottom:8px;">
+      <input type="password" id="quick-new-password" placeholder="新密码 (至少6位)" style="width:100%;margin-bottom:8px;">
+      <input type="password" id="quick-confirm-password" placeholder="确认新密码" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('quick-password-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="quickChangePassword()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改头像 -->
+<div class="modal-overlay" id="quick-avatar-modal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close" onclick="closeModal('quick-avatar-modal')">x</button>
+    <h3>修改头像</h3>
+    <div style="text-align:center;margin:12px 0;">
+      <div id="quick-avatar-preview" style="width:80px;height:80px;border-radius:50%;background:var(--primary-light);display:inline-flex;align-items:center;justify-content:center;font-size:32px;color:var(--primary);font-weight:600;overflow:hidden;flex-shrink:0;">管</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+      <input type="file" id="quick-avatar-file" accept="image/*" style="font-size:12px;flex:1;">
+      <button class="btn btn-primary btn-sm" onclick="quickUploadAvatar()">上传</button>
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('quick-avatar-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 管理员修改用户邮箱 -->
+<div class="modal-overlay" id="admin-edit-email-modal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close" onclick="closeModal('admin-edit-email-modal')">x</button>
+    <h3>修改用户邮箱</h3>
+    <input type="hidden" id="admin-edit-email-uid">
+    <div class="form-group">
+      <label>用户</label>
+      <div id="admin-edit-email-username" style="font-size:13px;color:var(--text-muted);margin-bottom:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label>当前邮箱</label>
+      <div id="admin-edit-email-current" style="font-size:13px;color:var(--text-muted);margin-bottom:4px;"></div>
+    </div>
+    <div class="form-group">
+      <label>新邮箱</label>
+      <input type="email" id="admin-edit-email-new" placeholder="新邮箱地址" style="width:100%;">
+    </div>
+    <div style="text-align:right;margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('admin-edit-email-modal')">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="adminSaveEmail()">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ===================================================================
+// 主题管理（三模式：白天/黑夜/自动）
+// ===================================================================
+function setTheme(mode) {
+  if (mode === 'auto') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', mode);
+  }
+  localStorage.setItem('admin_theme', mode);
+  document.getElementById('theme-selector').value = mode;
+}
+function initTheme() {
+  const saved = localStorage.getItem('admin_theme') || 'light';
+  document.getElementById('theme-selector').value = saved;
+  setTheme(saved);
+  if (saved === 'auto') {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+      setTheme('auto');
+    });
+  }
+}
+initTheme();
+
 // ===================================================================
 // 管理面板 JavaScript
 // ===================================================================
@@ -828,6 +974,7 @@ async function loadUsers(page) {
         } else {
           actions += '<button class="btn-totp" onclick="adminTotpBind(' + u.id + ')">协助绑定TOTP</button>';
         }
+        actions += '<button class="btn-totp" onclick="adminEditEmail(' + u.id + ',\'' + esc(u.email || '') + '\',\'' + esc(u.username) + '\')">修改邮箱</button>';
         actions += '<button class="btn-delete" onclick="deleteUser(' + u.id + ',\'' + esc(u.username) + '\')">删除账户</button>';
       }
       actions += '</div>';
@@ -1310,7 +1457,118 @@ async function clearEmailLogs() {
 }
 
 // ===================================================================
-// 管理员自服务 - 资料弹窗
+// 快速编辑弹窗函数（拆分入口）
+// ===================================================================
+function openNicknameModal() {
+  if (!ADMIN_PROFILE) { toast('请先加载个人资料', 'error'); return; }
+  document.getElementById('quick-nickname').value = ADMIN_PROFILE.nickname || '';
+  showModal('quick-nickname-modal');
+}
+async function quickSaveNickname() {
+  const nickname = document.getElementById('quick-nickname').value.trim();
+  if (!nickname) { toast('请输入昵称', 'error'); return; }
+  try {
+    await api('/auth/profile/nickname', { method: 'PUT', body: JSON.stringify({ nickname }) });
+    toast('昵称已更新', 'success');
+    document.getElementById('admin-name').textContent = nickname;
+    if (ADMIN_PROFILE) ADMIN_PROFILE.nickname = nickname;
+    closeModal('quick-nickname-modal');
+  } catch(e) { toast('更新失败: ' + e.message, 'error'); }
+}
+
+function openEmailModal() {
+  if (!ADMIN_PROFILE) { toast('请先加载个人资料', 'error'); return; }
+  document.getElementById('quick-email-current').textContent = ADMIN_PROFILE.email ? '当前: ' + ADMIN_PROFILE.email : '未设置邮箱';
+  document.getElementById('quick-email').value = '';
+  document.getElementById('quick-email-password').value = '';
+  showModal('quick-email-modal');
+}
+async function quickSaveEmail() {
+  const new_email = document.getElementById('quick-email').value.trim();
+  const password = document.getElementById('quick-email-password').value;
+  if (!new_email) { toast('请输入新邮箱', 'error'); return; }
+  if (!password) { toast('请输入密码确认', 'error'); return; }
+  try {
+    await api('/auth/profile/email', { method: 'PUT', body: JSON.stringify({ new_email, password }) });
+    toast('邮箱已更新', 'success');
+    document.getElementById('quick-email-current').textContent = '当前: ' + new_email;
+    if (ADMIN_PROFILE) ADMIN_PROFILE.email = new_email;
+    closeModal('quick-email-modal');
+  } catch(e) { toast('更新失败: ' + e.message, 'error'); }
+}
+
+function openPasswordModal() {
+  document.getElementById('quick-old-password').value = '';
+  document.getElementById('quick-new-password').value = '';
+  document.getElementById('quick-confirm-password').value = '';
+  showModal('quick-password-modal');
+}
+async function quickChangePassword() {
+  const old_password = document.getElementById('quick-old-password').value;
+  const new_password = document.getElementById('quick-new-password').value;
+  const confirm = document.getElementById('quick-confirm-password').value;
+  if (!old_password || !new_password || !confirm) { toast('请填写所有字段', 'error'); return; }
+  if (new_password !== confirm) { toast('两次密码不一致', 'error'); return; }
+  if (new_password.length < 6) { toast('密码至少6位', 'error'); return; }
+  try {
+    const r = await api('/auth/profile/password', { method: 'PUT', body: JSON.stringify({ current_password: old_password, new_password }) });
+    if (r.access_token) { TOKEN = r.access_token; localStorage.setItem('sync_token', TOKEN); }
+    toast('密码已修改', 'success');
+    closeModal('quick-password-modal');
+  } catch(e) { toast('修改失败: ' + e.message, 'error'); }
+}
+
+function openAvatarModal() {
+  document.getElementById('quick-avatar-file').value = '';
+  // 刷新预览
+  const preview = document.getElementById('quick-avatar-preview');
+  fetch(API_BASE + '/auth/profile/avatar/image', { headers: { 'Authorization': 'Bearer ' + TOKEN } })
+    .then(r => { if (r.ok) return r.blob(); throw new Error('no avatar'); })
+    .then(blob => { preview.innerHTML = '<img src="' + URL.createObjectURL(blob) + '" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">'; })
+    .catch(() => { preview.textContent = '管'; });
+  showModal('quick-avatar-modal');
+}
+async function quickUploadAvatar() {
+  const file = document.getElementById('quick-avatar-file').files[0];
+  if (!file) { toast('请选择头像文件', 'error'); return; }
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const r = await fetch(API_BASE + '/auth/profile/avatar', { method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKEN }, body: formData });
+    if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d.detail || '上传失败'); }
+    toast('头像上传成功', 'success');
+    loadAvatar(ADMIN_PROFILE ? ADMIN_PROFILE.username : null);
+    closeModal('quick-avatar-modal');
+  } catch(e) { toast('上传失败: ' + e.message, 'error'); }
+}
+
+function openDeleteAccountModal() {
+  // 跳转到 profile 页面的注销区域
+  window.location.href = '/profile';
+}
+
+// 管理员修改用户邮箱
+function adminEditEmail(uid, currentEmail, username) {
+  document.getElementById('admin-edit-email-uid').value = uid;
+  document.getElementById('admin-edit-email-username').textContent = username;
+  document.getElementById('admin-edit-email-current').textContent = currentEmail || '未设置邮箱';
+  document.getElementById('admin-edit-email-new').value = '';
+  showModal('admin-edit-email-modal');
+}
+async function adminSaveEmail() {
+  const uid = document.getElementById('admin-edit-email-uid').value;
+  const new_email = document.getElementById('admin-edit-email-new').value.trim();
+  if (!new_email || !new_email.includes('@')) { toast('请输入有效邮箱', 'error'); return; }
+  try {
+    await api('/admin/user/profile', { method: 'PUT', body: JSON.stringify({ user_id: parseInt(uid), email: new_email }) });
+    toast('用户邮箱已更新', 'success');
+    closeModal('admin-edit-email-modal');
+    loadUsers();
+  } catch(e) { toast('更新失败: ' + e.message, 'error'); }
+}
+
+// ===================================================================
+// 管理员自服务 - 资料弹窗 (保留兼容旧入口)
 // ===================================================================
 let _pendingTotpData = null;
 let _pendingTotpBindUserId = null;
@@ -1737,6 +1995,11 @@ function switchTab(tab) {
   if (tab === 'email-logs') {
     const el = document.getElementById('email-log-entries');
     if (!el.querySelector('.log-entry')) loadEmailLogs();
+  }
+  // 懒加载：切换到审计日志tab时若数据为空则自动加载
+  if (tab === 'logs') {
+    const el = document.getElementById('log-entries');
+    if (!el.querySelector('.log-entry')) loadLogs();
   }
 }
 

@@ -31,6 +31,8 @@
   .card:hover { border-color: var(--primary-deep); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
   .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
   .card p { font-size: 15px; color: var(--text-muted); }
+  /* 公开邀请码卡片：去掉顶部渐变条 */
+  #public-invites-card::before { display: none; }
   .card .contact {
     margin-top: 12px; padding: 10px 14px;
     background: rgba(200, 182, 159, 0.15);
@@ -210,7 +212,7 @@
   </div>
 
   <!-- 公开邀请码 -->
-  <div class="card" style="margin-top:20px;">
+  <div class="card" id="public-invites-card" style="margin-top:20px;">
     <h3>🔑 公开邀请码</h3>
     <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">无需联系管理员，选择一个邀请码即可注册</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px;" id="public-invites-table">
@@ -250,7 +252,7 @@
     <p>CBox 同步服务 &middot; AGPL v3 开源协议</p>
     <p style="margin-top:8px;">运行于 Docker &middot; Ubuntu &middot; Oracle ARM</p>
     <p style="margin-top:8px;font-size:13px;color:var(--text-muted);">
-      AI 辅助开发: Hermes + deepseek-v4-flash
+      AI 辅助开发: Hermes + deepseek-v4-pro
     </p>
   </footer>
 
