@@ -214,7 +214,7 @@ async def invite_page():
 
 @app.get("/doc", response_class=FileResponse)
 async def doc_page():
-    return FileResponse(os.path.join(_static_dir, "doc.html"), media_type="text/html")
+    return FileResponse(os.path.join(_static_dir, "docs.html"), media_type="text/html")
 
 
 @app.get("/public-invites", response_class=FileResponse)
@@ -224,4 +224,4 @@ async def public_invites_page():
 
 @app.get("/my-invites", response_class=FileResponse)
 async def user_invites_page():
-    return FileResponse(os.path.join(_static_dir, "user-invites.html"), media_type="text/html")
+    return FileResponse(os.path.join(_static_dir, "my-invites.html"), media_type="text/html")
