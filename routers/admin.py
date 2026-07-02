@@ -317,6 +317,32 @@ async def update_user_order(req: AdminUpdateOrderRequest, db: Session = Depends(
     return {"message": "排序已更新"}
 
 
+class AdminUpdateUserRequest(BaseModel):
+    user_id: int
+    email: str | None = None
+
+
+@router.put("/user/profile", dependencies=ADMIN_DEPENDS)
+async def admin_update_user_profile(
+    req: AdminUpdateUserRequest,
+    db: Session = Depends(get_db),
+):
+    """管理员修改用户资料（邮箱等）"""
+    user = db.query(User).filter(User.id == req.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    if req.email:
+        if db.query(User).filter(User.email == req.email, User.id != req.user_id).first():
+            raise HTTPException(status_code=400, detail="邮箱已被使用")
+        user.email = req.email
+        user.email_verified = False
+    db.commit()
+    _log(db, req.user_id, "admin_update_profile",
+         f"管理员修改了用户 {user.username} 的邮箱为 {req.email}",
+         username=user.username)
+    return {"message": "用户资料已更新"}
+
+
 # ── 审计日志 ──
 
 
