@@ -4,107 +4,82 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CBox 同步服务</title>
+<link rel="stylesheet" href="/static/theme.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ── 变量别名，桥接 theme.css ── */
   :root {
-    --bg: #F2F0E6;
-    --bg-card: #FCFAF5;
-    --bg-hover: #E8E3D3;
-    --text: #3D4446;
-    --text-dim: #5E6769;
-    --accent: #4A7A8C;
-    --accent-dim: #2D5A6B;
-    --border: #7A9E7E;
+    --text: var(--text-main);
+    --text-dim: var(--text-muted);
+    --accent: var(--primary);
+    --accent-dim: var(--primary-deep);
+    --border: var(--border-light);
     --warm: #C8B69F;
-    --link: #4A7A8C;
-    --red: #B55A5A;
+    --link: var(--primary);
+    --red: var(--btn-danger);
   }
   [data-theme="dark"] {
-    --bg: #1E2324; --bg-card: #262C2D; --bg-hover: #2D3435;
-    --text: #D9E2E5; --text-dim: #8A9597;
-    --accent: #6A9AA8; --accent-dim: #5A8A7E;
-    --border: #3A4A4C; --warm: #B8A68E; --link: #6A9AA8; --red: #C07070;
+    --warm: #B8A68E;
   }
-  [data-theme="light"] {
-    --bg: #F2F0E6; --bg-card: #FCFAF5; --bg-hover: #E8E3D3;
-    --text: #3D4446; --text-dim: #5E6769;
-    --accent: #4A7A8C; --accent-dim: #2D5A6B;
-    --border: #7A9E7E; --warm: #C8B69F; --link: #4A7A8C; --red: #B55A5A;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI",
-                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.75;
-    min-height: 100vh;
-    font-size: 15px;
-    transition: background 0.3s, color 0.3s;
-  }
-  body::before {
-    content: '';
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    z-index: -1;
-    background:
-      radial-gradient(ellipse at 20% 20%, rgba(74,122,140,0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(200,182,159,0.06) 0%, transparent 50%);
-  }
+
   .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+
+  /* ── 覆盖 theme.css 的 .card 以支持索引页专属 hover 效果 ── */
+  .card { margin-bottom: 16px; transition: all 0.25s; }
+  .card:hover { border-color: var(--primary-deep); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--primary); }
+  .card p { font-size: 15px; color: var(--text-muted); }
+  .card .contact {
+    margin-top: 12px; padding: 10px 14px;
+    background: rgba(200, 182, 159, 0.15);
+    border: 1px solid rgba(200, 182, 159, 0.25);
+    border-radius: 6px; font-size: 15px; color: var(--warm);
+  }
+  .card .contact a { color: var(--warm); text-decoration: underline; }
 
   /* ── Header ── */
   header { text-align: center; padding: 60px 0 40px; position: relative; }
-  header .logo svg { width: 48px; height: 48px; filter: drop-shadow(0 2px 8px rgba(74,122,140,0.15)); }
+  header .logo svg { width: 48px; height: 48px; filter: drop-shadow(0 2px 8px rgba(31,38,135,0.12)); }
   header h1 {
     font-size: 30px; font-weight: 700;
-    color: var(--accent); letter-spacing: 1px;
-    margin-top: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px; margin-top: 16px;
   }
-  header p { margin-top: 12px; color: var(--text-dim); font-size: 16px; }
+  header p { margin-top: 12px; color: var(--text-muted); font-size: 16px; }
+
+  /* ── 主题切换 ── */
   .theme-btn {
     position: absolute; top: 10px; right: 0;
-    background: rgba(252,250,245,0.7); border: 1px solid rgba(122,158,126,0.25);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border-radius: 20px; width: 36px; height: 36px;
     cursor: pointer; font-size: 16px;
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s; color: var(--text);
-    box-shadow: 0 2px 8px rgba(74,122,140,0.06);
+    transition: all 0.15s; color: var(--text-main);
+    box-shadow: var(--shadow-sm);
   }
-  [data-theme="dark"] .theme-btn { background: rgba(38,44,45,0.7); }
-  .theme-btn:hover { border-color: var(--accent); }
-  .badge {
-    display: inline-block; margin-top: 16px;
-    padding: 4px 14px; border-radius: 20px;
-    background: rgba(74, 122, 140, 0.10);
-    color: var(--accent); font-size: 14px;
-    border: 1px solid rgba(74, 122, 140, 0.20);
-  }
+  .theme-btn:hover { border-color: var(--primary); }
 
   /* ── Status ── */
   .status-bar {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     margin: 24px 0 40px; padding: 12px; border-radius: 12px;
-    background: rgba(252,250,245,0.7);
-    border: 1px solid rgba(122,158,126,0.25);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 2px 12px rgba(74,122,140,0.06);
-  }
-  [data-theme="dark"] .status-bar {
-    background: rgba(38,44,45,0.7);
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-sm);
   }
   .status-dot {
     width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 6px rgba(74, 122, 140, 0.4);
+    background: var(--primary);
+    box-shadow: 0 0 6px rgba(79, 140, 255, 0.4);
     animation: pulse 2s ease-in-out infinite;
   }
   @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
-  .status-bar span { font-size: 15px; color: var(--text-dim); }
+  .status-bar span { font-size: 15px; color: var(--text-muted); }
 
   /* ── Feature grid ── */
   .features {
@@ -115,70 +90,35 @@
   @media (max-width: 700px) { .features { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 560px) { .features { grid-template-columns: 1fr; } }
   .feature {
-    background: rgba(252,250,245,0.65); border: 1px solid rgba(122,158,126,0.2);
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
     border-radius: 12px; padding: 20px; transition: all 0.25s;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 2px 12px rgba(74,122,140,0.04);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-sm);
   }
-  .feature:hover { border-color: var(--warm); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,122,140,0.1); }
-  [data-theme="dark"] .feature { background: rgba(38,44,45,0.65); }
+  .feature:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--glass-shadow-hover); }
   .feature svg { width: 28px; height: 28px; margin-bottom: 10px; }
   .feature h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .feature p { font-size: 14px; color: var(--text-dim); }
+  .feature p { font-size: 14px; color: var(--text-muted); }
 
-  /* ── Card ── */
-  .card {
-    background: rgba(252,250,245,0.7); border: 1px solid rgba(122,158,126,0.2);
-    border-radius: 12px; padding: 24px; margin-bottom: 16px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 2px 12px rgba(74,122,140,0.04);
-    transition: all 0.25s;
-  }
-  .card:hover { border-color: var(--accent-dim); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,122,140,0.1); }
-  [data-theme="dark"] .card { background: rgba(38,44,45,0.7); }
-  .card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; color: var(--accent); }
-  .card p { font-size: 15px; color: var(--text-dim); }
-  .card .tag {
-    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 13px;
-    margin-top: 10px; background: rgba(74, 122, 140, 0.08); color: var(--accent);
-  }
-  .card .contact {
-    margin-top: 12px; padding: 10px 14px;
-    background: rgba(200, 182, 159, 0.15);
-    border: 1px solid rgba(200, 182, 159, 0.25);
-    border-radius: 6px; font-size: 15px; color: var(--warm);
-  }
-  .card .contact a { color: var(--warm); text-decoration: underline; }
-
-  /* ── Links ── */
-  .links {
-    display: flex; gap: 12px; flex-wrap: wrap; margin: 32px 0;
-  }
-  .links a {
-    flex: 1; min-width: 160px; text-align: center;
-    padding: 14px 20px; border-radius: 8px; text-decoration: none;
-    font-size: 15px; font-weight: 500; transition: all 0.2s;
-  }
-  .links .primary { background: var(--accent); color: #1a1a1a; }
-  .links .primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
-  .links .secondary { background: rgba(252,250,245,0.7); color: var(--text); border: 1px solid rgba(122,158,126,0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  [data-theme="dark"] .links .secondary { background: rgba(38,44,45,0.7); }
-  .links .secondary:hover { border-color: var(--accent-dim); color: var(--accent); transform: translateY(-1px); }
-
-  /* ── Pre ── */
-  pre {
-    background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;
-    padding: 12px 16px; font-size: 14px; color: var(--accent);
-    overflow-x: auto; margin-top: 8px;
+  /* ── 邀请码表格行样式 ── */
+  .invite-code-cell {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 15px; font-weight: 600; color: var(--primary);
+    background: none;
   }
 
-  /* ── Footer ── */
+  /* ── 仓库表格 ── */
+  .repo-table { width:100%; border-collapse: collapse; margin-top:12px; font-size:14px; }
+  .repo-table td { padding: 10px 8px; }
+  .repo-table tr { border-bottom: 1px solid var(--border-light); }
+  .repo-table a { color: var(--link); text-decoration: none; }
+  .repo-table a:hover { text-decoration: underline; }
+
+  /* ── 页脚 ── */
   footer {
     text-align: center; padding: 40px 0 20px;
-    color: var(--text-dim); font-size: 14px;
-    border-top: 1px solid var(--border); margin-top: 20px;
+    color: var(--text-muted); font-size: 14px;
+    border-top: 1px solid var(--border-light); margin-top: 20px;
   }
   footer a { color: var(--link); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
@@ -189,10 +129,10 @@
 
   <!-- Header -->
   <header>
-    <button class="theme-btn" onclick="toggleTheme()" title="切换白天/黑夜模式" id="theme-btn">&#9788;</button>
+    <button class="theme-btn" onclick="toggleTheme()" title="切换白天/黑夜模式" id="theme-btn">☾</button>
     <div class="logo">
       <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="8" y="6" width="32" height="36" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="var(--bg)"/>
+        <rect x="8" y="6" width="32" height="36" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="none"/>
         <circle cx="24" cy="19" r="5" stroke="var(--accent)" stroke-width="2" fill="none"/>
         <path d="M16 33c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="var(--accent)" stroke-width="2" fill="none"/>
         <line x1="14" y1="2" x2="14" y2="10" stroke="var(--accent-dim)" stroke-width="1.5"/>
@@ -209,7 +149,7 @@
     <span id="status-text">检测中...</span>
   </div>
 
-  <!-- Feature cards — now 3-column on desktop -->
+  <!-- Feature cards -->
   <div class="features">
     <div class="feature">
       <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -269,53 +209,35 @@
     </div>
   </div>
 
-  <!-- Quick links -->
-  <div class="links">
-    <a href="/invite" target="_blank" class="secondary">邀请码注册</a>
-    <!-- DOCS_LINK -->
-  </div>
-
   <!-- 公开邀请码 -->
   <div class="card" style="margin-top:20px;">
     <h3>🔑 公开邀请码</h3>
-    <p style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">无需联系管理员，选择一个邀请码即可注册</p>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">无需联系管理员，选择一个邀请码即可注册</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px;" id="public-invites-table">
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px 8px;text-align:center;color:var(--text-dim);" colspan="2">加载中...</td>
+      <tr style="border-bottom:1px solid var(--border-light);">
+        <td style="padding:10px 8px;text-align:center;color:var(--text-muted);" colspan="2">加载中...</td>
       </tr>
     </table>
   </div>
 
-  <!-- Repos -->
+  <!-- 开源仓库 -->
   <div class="card" style="margin-top:20px;">
     <h3>📦 开源仓库</h3>
-    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:14px;">
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px 8px;color:var(--text-dim);">🔧 服务端</td>
-        <td style="padding:10px 8px;">
-          <a href="https://github.com/onepve/flutter-sync-server" target="_blank" style="color:var(--link);">
-            onepve/flutter-sync-server
-          </a>
-        </td>
-        <td style="padding:10px 8px;color:var(--text-dim);">FastAPI + MySQL + Docker</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px 8px;color:var(--text-dim);">📱 客户端</td>
-        <td style="padding:10px 8px;">
-          <a href="https://github.com/onepve/flutter_server_box" target="_blank" style="color:var(--link);">
-            onepve/flutter_server_box
-          </a>
-        </td>
-        <td style="padding:10px 8px;color:var(--text-dim);">Flutter 跨平台 App</td>
+    <table class="repo-table">
+      <tr>
+        <td style="color:var(--text-muted);">🔧 服务端</td>
+        <td><a href="https://github.com/onepve/flutter-sync-server" target="_blank">onepve/flutter-sync-server</a></td>
+        <td style="color:var(--text-muted);">FastAPI + MySQL + Docker</td>
       </tr>
       <tr>
-        <td style="padding:10px 8px;color:var(--text-dim);">👤 原作者</td>
-        <td style="padding:10px 8px;">
-          <a href="https://github.com/lollipopkit/flutter_server_box" target="_blank" style="color:var(--link);">
-            lollipopkit/flutter_server_box
-          </a>
-        </td>
-        <td style="padding:10px 8px;color:var(--text-dim);">上游项目 · 致谢 ❤️</td>
+        <td style="color:var(--text-muted);">📱 客户端</td>
+        <td><a href="https://github.com/onepve/flutter_server_box" target="_blank">onepve/flutter_server_box</a></td>
+        <td style="color:var(--text-muted);">Flutter 跨平台 App</td>
+      </tr>
+      <tr>
+        <td style="color:var(--text-muted);">👤 原作者</td>
+        <td><a href="https://github.com/lollipopkit/flutter_server_box" target="_blank">lollipopkit/flutter_server_box</a></td>
+        <td style="color:var(--text-muted);">上游项目 · 致谢 ❤️</td>
       </tr>
     </table>
     <div class="contact">
@@ -327,7 +249,7 @@
   <footer>
     <p>CBox 同步服务 &middot; AGPL v3 开源协议</p>
     <p style="margin-top:8px;">运行于 Docker &middot; Ubuntu &middot; Oracle ARM</p>
-    <p style="margin-top:8px;font-size:13px;color:var(--text-dim);">
+    <p style="margin-top:8px;font-size:13px;color:var(--text-muted);">
       AI 辅助开发: Hermes + deepseek-v4-flash
     </p>
   </footer>
@@ -339,13 +261,13 @@
 (function(){
   var t = localStorage.getItem("theme")||"light";
   document.documentElement.setAttribute("data-theme",t);
-  document.getElementById("theme-btn").textContent = t==="light"?"\u263E":"\u2600";
+  document.getElementById("theme-btn").textContent = t==="light"?"☾":"☀";
 })();
 function toggleTheme(){
   var el=document.documentElement, cur=el.getAttribute("data-theme");
   var next=cur==="light"?"dark":"light";
   el.setAttribute("data-theme",next);
-  document.getElementById("theme-btn").textContent = next==="light"?"\u263E":"\u2600";
+  document.getElementById("theme-btn").textContent = next==="light"?"☾":"☀";
   localStorage.setItem("theme",next);
 }
 
@@ -368,7 +290,7 @@ function toggleTheme(){
     const r = await fetch('/api/invite/public');
     const d = await r.json();
     if (!d.codes || !d.codes.length) {
-      el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-dim);" colspan="2">暂无公开邀请码，请<a href="/invite" style="color:var(--link);">联系管理员</a>获取</td></tr>';
+      el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-muted);" colspan="2">暂无公开邀请码，请联系管理员获取</td></tr>';
       return;
     }
     el.innerHTML = d.codes.map(function(c) {
@@ -376,15 +298,15 @@ function toggleTheme(){
       const expiry = c.expires_at
         ? new Date(c.expires_at).toLocaleString('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit'})
         : '永久有效';
-      return '<tr style="border-bottom:1px solid var(--border);">' +
+      return '<tr style="border-bottom:1px solid var(--border-light);">' +
         '<td style="padding:10px 8px;">' +
-          '<code style="font-size:15px;font-weight:600;color:var(--accent);">' + c.code + '</code>' +
+          '<span class="invite-code-cell">' + c.code + '</span>' +
         '</td>' +
-        '<td style="padding:10px 8px;color:var(--text-dim);text-align:right;">剩余 ' + remaining + ' · ' + expiry + '</td>' +
+        '<td style="padding:10px 8px;color:var(--text-muted);text-align:right;">剩余 ' + remaining + ' · ' + expiry + '</td>' +
         '</tr>';
     }).join('');
   } catch(e) {
-    el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-dim);" colspan="2">加载失败，请稍后刷新</td></tr>';
+    el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-muted);" colspan="2">加载失败，请稍后刷新</td></tr>';
   }
 })();
 </script>
