@@ -201,7 +201,6 @@
     </div>
     <h1>CBox 同步服务</h1>
     <p>CBox 跨平台云同步后端 — 端到端加密，支持多用户管理</p>
-    <div class="badge" id="version-badge">加载中...</div>
   </header>
 
   <!-- Status -->
@@ -272,9 +271,19 @@
 
   <!-- Quick links -->
   <div class="links">
-    <a href="/invite" target="_blank" class="secondary">公开邀请码</a>
+    <a href="/invite" target="_blank" class="secondary">邀请码注册</a>
     <!-- DOCS_LINK -->
-    <a href="/admin" target="_blank" class="secondary">管理后台</a>
+  </div>
+
+  <!-- 公开邀请码 -->
+  <div class="card" style="margin-top:20px;">
+    <h3>🔑 公开邀请码</h3>
+    <p style="font-size:14px;color:var(--text-dim);margin-bottom:12px;">无需联系管理员，选择一个邀请码即可注册</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;" id="public-invites-table">
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:10px 8px;text-align:center;color:var(--text-dim);" colspan="2">加载中...</td>
+      </tr>
+    </table>
   </div>
 
   <!-- Repos -->
@@ -340,17 +349,42 @@ function toggleTheme(){
   localStorage.setItem("theme",next);
 }
 
-// ── 动态检测服务状态和版本 ──
+// ── 动态检测服务状态 ──
 (async function(){
   try {
     var r = await fetch("/api/health");
     var d = await r.json();
     document.getElementById("status-text").textContent = "服务运行中 · " + (d.status||"正常");
-    document.getElementById("version-badge").textContent = "v" + (d.version||"?") + " · CBox 同步服务";
   } catch(e) {
     document.getElementById("status-dot").style.background = "var(--red)";
     document.getElementById("status-text").textContent = "服务异常";
-    document.getElementById("version-badge").textContent = "CBox 同步服务";
+  }
+})();
+
+// ── 加载公开邀请码 ──
+(async function(){
+  const el = document.getElementById('public-invites-table');
+  try {
+    const r = await fetch('/api/invite/public');
+    const d = await r.json();
+    if (!d.codes || !d.codes.length) {
+      el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-dim);" colspan="2">暂无公开邀请码，请<a href="/invite" style="color:var(--link);">联系管理员</a>获取</td></tr>';
+      return;
+    }
+    el.innerHTML = d.codes.map(function(c) {
+      const remaining = c.max_uses === -1 ? '无限次' : (c.max_uses - c.used_count) + ' 次';
+      const expiry = c.expires_at
+        ? new Date(c.expires_at).toLocaleString('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit'})
+        : '永久有效';
+      return '<tr style="border-bottom:1px solid var(--border);">' +
+        '<td style="padding:10px 8px;">' +
+          '<code style="font-size:15px;font-weight:600;color:var(--accent);">' + c.code + '</code>' +
+        '</td>' +
+        '<td style="padding:10px 8px;color:var(--text-dim);text-align:right;">剩余 ' + remaining + ' · ' + expiry + '</td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<tr><td style="padding:14px 8px;text-align:center;color:var(--text-dim);" colspan="2">加载失败，请稍后刷新</td></tr>';
   }
 })();
 </script>
