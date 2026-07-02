@@ -377,7 +377,11 @@
             <div class="pf-text" id="p-username">—</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-secondary" onclick="showEdit('username')">修改</button>
+            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">修改</button>
+          </div>
+        </div>
+        <div class="profile-field">
+          <div class="pf-label">邮箱</div>
           </div>
         </div>
         <div class="inline-edit" id="edit-username">
@@ -394,9 +398,14 @@
             <div class="pf-text" id="p-nickname">—</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-secondary" onclick="showEdit('nickname')">修改</button>
+            <button class="btn btn-sm btn-primary" onclick="openEditModal()">编辑资料</button>
           </div>
         </div>
+        <div class="inline-edit" id="edit-nickname"></div>
+
+        <!-- 邮箱 -->
+        <div class="profile-field">
+          <div class="pf-label">邮箱</div>
         <div class="inline-edit" id="edit-nickname">
           <input type="text" id="edit-nickname-input" placeholder="新昵称">
           <button class="btn btn-sm btn-primary" onclick="saveNickname()">保存</button>
@@ -412,7 +421,7 @@
             <div class="pf-sub" id="p-email-status"></div>
           </div>
           <div class="pf-actions" id="email-actions">
-            <button class="btn btn-sm btn-secondary" onclick="showEdit('email')">修改</button>
+            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">编辑</button>
             <button class="btn btn-sm btn-success" id="btn-verify-email" style="display:none;" onclick="sendEmailVerification()">验证</button>
           </div>
         </div>
@@ -442,7 +451,7 @@
             <div class="pf-text">••••••••</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-secondary" onclick="showEdit('password')">修改</button>
+            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">编辑</button>
           </div>
         </div>
         <div class="inline-edit" id="edit-password">
@@ -510,6 +519,99 @@
 
   </div>
 </div>
+
+<!-- 编辑资料弹窗 -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <h3 style="color:var(--text-main);margin-bottom:16px;">编辑资料</h3>
+    <!-- 昵称 -->
+    <div class="form-group">
+      <label>昵称</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="modal-nickname" placeholder="昵称" style="flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="saveNickname()">保存</button>
+      </div>
+      <div class="status-inline" id="status-modal-nickname"></div>
+    </div>
+    <!-- 邮箱 -->
+    <div class="form-group">
+      <label>邮箱</label>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+        <span id="modal-email-current" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+      <input type="email" id="modal-email" placeholder="新邮箱地址">
+      <input type="password" id="modal-email-password" placeholder="输入密码确认" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="saveEmail()" style="margin-top:4px;">保存邮箱</button>
+      <div class="status-inline" id="status-modal-email"></div>
+    </div>
+    <!-- 用户名 -->
+    <div class="form-group">
+      <label>用户名</label>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+        <span id="modal-username-current" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+      <input type="text" id="modal-username" placeholder="新用户名">
+      <input type="password" id="modal-username-password" placeholder="输入密码确认" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="saveUsername()" style="margin-top:4px;">保存用户名</button>
+      <div class="status-inline" id="status-modal-username"></div>
+    </div>
+    <!-- 密码 -->
+    <div class="form-group">
+      <label>修改密码</label>
+      <input type="password" id="modal-pass-current" placeholder="当前密码">
+      <input type="password" id="modal-pass-new" placeholder="新密码" style="margin-top:4px;">
+      <input type="password" id="modal-pass-confirm" placeholder="确认新密码" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="savePassword()" style="margin-top:4px;">修改密码</button>
+      <div class="status-inline" id="status-modal-password"></div>
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeEditModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑资料弹窗 -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <h3 style="color:var(--text-main);margin-bottom:16px;">编辑资料</h3>
+    <div class="form-group">
+      <label>昵称</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="modal-nickname" placeholder="昵称" style="flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="saveNickname()">保存</button>
+      </div>
+      <div class="status-inline" id="status-modal-nickname"></div>
+    </div>
+    <div class="form-group">
+      <label>邮箱</label>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;" id="modal-email-current"></div>
+      <input type="email" id="modal-email" placeholder="新邮箱地址">
+      <input type="password" id="modal-email-password" placeholder="输入密码确认" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="saveEmail()" style="margin-top:4px;">保存邮箱</button>
+      <div class="status-inline" id="status-modal-email"></div>
+    </div>
+    <div class="form-group">
+      <label>用户名</label>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;" id="modal-username-current"></div>
+      <input type="text" id="modal-username" placeholder="新用户名">
+      <input type="password" id="modal-username-password" placeholder="输入密码确认" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="saveUsername()" style="margin-top:4px;">保存用户名</button>
+      <div class="status-inline" id="status-modal-username"></div>
+    </div>
+    <div class="form-group">
+      <label>修改密码</label>
+      <input type="password" id="modal-pass-current" placeholder="当前密码">
+      <input type="password" id="modal-pass-new" placeholder="新密码" style="margin-top:4px;">
+      <input type="password" id="modal-pass-confirm" placeholder="确认新密码" style="margin-top:4px;">
+      <button class="btn btn-primary btn-sm" onclick="savePassword()" style="margin-top:4px;">修改密码</button>
+      <div class="status-inline" id="status-modal-password"></div>
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button class="btn btn-secondary btn-sm" onclick="closeEditModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- 注销确认弹窗 -->
 <div class="modal-overlay" id="delete-modal">
@@ -698,7 +800,29 @@ async function apiCall(url, opts = {}) {
   return r.json();
 }
 
-// ── 内联编辑 ──
+
+// ── 编辑资料弹窗 ──
+function openEditModal() {
+  const nn = document.getElementById('p-nickname').textContent;
+  const un = document.getElementById('p-username').textContent;
+  const em = document.getElementById('p-email').textContent;
+  document.getElementById('modal-nickname').value = (nn === '未设置' || nn === '—') ? '' : nn;
+  document.getElementById('modal-username').value = '';
+  document.getElementById('modal-email').value = '';
+  document.getElementById('modal-email-current').textContent = (em && em !== '未设置') ? '当前: ' + em : '未设置邮箱';
+  document.getElementById('modal-username-current').textContent = (un && un !== '—') ? '当前: ' + un : '';
+  document.getElementById('modal-email-password').value = '';
+  document.getElementById('modal-username-password').value = '';
+  document.getElementById('modal-pass-current').value = '';
+  document.getElementById('modal-pass-new').value = '';
+  document.getElementById('modal-pass-confirm').value = '';
+  document.querySelectorAll('#edit-modal .status-inline').forEach(el => { el.textContent = ''; el.className = 'status-inline'; });
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+// ── 内联编辑 (保留兼容) ──
 function showEdit(field) {
   document.querySelectorAll('.inline-edit').forEach(el => el.classList.remove('open'));
   const el = document.getElementById('edit-' + field);
@@ -711,40 +835,46 @@ function hideEdit(field) {
 
 // ── 修改昵称 ──
 async function saveNickname() {
-  const val = document.getElementById('edit-nickname-input').value.trim();
-  if (!val) { setInlineStatus('nickname', '请输入昵称', 'error'); return; }
+  const val = (document.getElementById('modal-nickname').value || document.getElementById('edit-nickname-input').value).trim();
+  if (!val) { setInlineStatus('modal-nickname', '请输入昵称', 'error'); return; }
   try {
     await apiCall(API + '/auth/profile/nickname', { method: 'PUT', body: JSON.stringify({ nickname: val }) });
     document.getElementById('p-nickname').textContent = val;
-    setInlineStatus('nickname', '昵称已更新', 'success');
-    hideEdit('nickname');
-  } catch (e) { setInlineStatus('nickname', e.message, 'error'); }
+    setInlineStatus('modal-nickname', '昵称已更新', 'success');
+    document.getElementById('modal-nickname').value = '';
+  } catch (e) { setInlineStatus('modal-nickname', e.message, 'error'); }
 }
 
 // ── 修改用户名 ──
 async function saveUsername() {
-  const val = document.getElementById('edit-username-input').value.trim();
-  if (!val) { setInlineStatus('username', '请输入用户名', 'error'); return; }
+  const val = (document.getElementById('modal-username').value || document.getElementById('edit-username-input').value).trim();
+  const password = document.getElementById('modal-username-password').value;
+  if (!val) { setInlineStatus('modal-username', '请输入用户名', 'error'); return; }
   try {
-    await apiCall(API + '/auth/profile/username', { method: 'PUT', body: JSON.stringify({ username: val }) });
+    await apiCall(API + '/auth/profile/username', { method: 'PUT', body: JSON.stringify({ username: val, password: password }) });
     document.getElementById('p-username').textContent = val;
-    setInlineStatus('username', '用户名已更新', 'success');
-    hideEdit('username');
-  } catch (e) { setInlineStatus('username', e.message, 'error'); }
+    document.getElementById('modal-username-current').textContent = '当前: ' + val;
+    setInlineStatus('modal-username', '用户名已更新', 'success');
+    document.getElementById('modal-username').value = '';
+    document.getElementById('modal-username-password').value = '';
+  } catch (e) { setInlineStatus('modal-username', e.message, 'error'); }
 }
 
 // ── 修改邮箱 ──
 async function saveEmail() {
-  const val = document.getElementById('edit-email-input').value.trim();
-  if (!val || !val.includes('@')) { setInlineStatus('email', '请输入有效邮箱', 'error'); return; }
+  const val = (document.getElementById('modal-email').value || document.getElementById('edit-email-input').value).trim();
+  const password = document.getElementById('modal-email-password').value;
+  if (!val || !val.includes('@')) { setInlineStatus('modal-email', '请输入有效邮箱', 'error'); return; }
   try {
-    await apiCall(API + '/auth/profile', { method: 'PUT', body: JSON.stringify({ email: val }) });
+    await apiCall(API + '/auth/profile', { method: 'PUT', body: JSON.stringify({ email: val, password: password }) });
     document.getElementById('p-email').textContent = val;
     document.getElementById('btn-verify-email').style.display = 'inline-flex';
-    setInlineStatus('email', '邮箱已更新，请验证', 'success');
-    hideEdit('email');
+    document.getElementById('modal-email-current').textContent = '当前: ' + val;
+    setInlineStatus('modal-email', '邮箱已更新，请验证', 'success');
     document.getElementById('p-email-status').innerHTML = '<span style="color:var(--btn-warning);">未验证</span>';
-  } catch (e) { setInlineStatus('email', e.message, 'error'); }
+    document.getElementById('modal-email').value = '';
+    document.getElementById('modal-email-password').value = '';
+  } catch (e) { setInlineStatus('modal-email', e.message, 'error'); }
 }
 
 // ── 发送邮箱验证 ──
@@ -771,20 +901,19 @@ async function verifyEmail() {
 
 // ── 修改密码 ──
 async function savePassword() {
-  const current = document.getElementById('edit-pass-current').value;
-  const newPass = document.getElementById('edit-pass-new').value;
-  const confirm = document.getElementById('edit-pass-confirm').value;
-  if (!current || !newPass || !confirm) { setInlineStatus('password', '请填写所有字段', 'error'); return; }
-  if (newPass !== confirm) { setInlineStatus('password', '两次密码不一致', 'error'); return; }
-  if (newPass.length < 6) { setInlineStatus('password', '密码至少 6 位', 'error'); return; }
+  const current = (document.getElementById('modal-pass-current').value || document.getElementById('edit-pass-current').value);
+  const newPass = (document.getElementById('modal-pass-new').value || document.getElementById('edit-pass-new').value);
+  const confirm = (document.getElementById('modal-pass-confirm').value || document.getElementById('edit-pass-confirm').value);
+  if (!current || !newPass || !confirm) { setInlineStatus('modal-password', '请填写所有字段', 'error'); return; }
+  if (newPass !== confirm) { setInlineStatus('modal-password', '两次密码不一致', 'error'); return; }
+  if (newPass.length < 6) { setInlineStatus('modal-password', '密码至少 6 位', 'error'); return; }
   try {
     await apiCall(API + '/auth/profile/password', { method: 'PUT', body: JSON.stringify({ current_password: current, new_password: newPass }) });
-    setInlineStatus('password', '密码已更新', 'success');
-    hideEdit('password');
-    document.getElementById('edit-pass-current').value = '';
-    document.getElementById('edit-pass-new').value = '';
-    document.getElementById('edit-pass-confirm').value = '';
-  } catch (e) { setInlineStatus('password', e.message, 'error'); }
+    setInlineStatus('modal-password', '密码已更新', 'success');
+    document.getElementById('modal-pass-current').value = '';
+    document.getElementById('modal-pass-new').value = '';
+    document.getElementById('modal-pass-confirm').value = '';
+  } catch (e) { setInlineStatus('modal-password', e.message, 'error'); }
 }
 
 // ── TOTP 设置 ──

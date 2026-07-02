@@ -193,6 +193,12 @@
             <option value="created_at">按注册时间</option>
           </select>
           <button class="btn btn-secondary btn-sm" onclick="loadUsers()">刷新</button>
+          <select id="user-page-size" onchange="userPageSize=parseInt(this.value);userPage=1;loadUsers()" style="width:70px;">
+            <option value="20" selected>20条</option>
+            <option value="40">40条</option>
+            <option value="80">80条</option>
+            <option value="100">100条</option>
+          </select>
           <span class="page-info-inline" id="user-page-info"></span>
         </div>
         <div class="table-wrap">
@@ -220,6 +226,12 @@
           <button class="btn btn-primary btn-sm" onclick="showCreateInvite()">创建邀请码</button>
           <button class="btn btn-secondary btn-sm" onclick="showBatchInvite()">批量生成</button>
           <button class="btn btn-secondary btn-sm" onclick="loadAdminInvites()">刷新</button>
+          <select id="admin-invite-page-size" onchange="adminInvitePageSize=parseInt(this.value);adminInvitePage=1;loadAdminInvites()" style="width:70px;">
+            <option value="20" selected>20条</option>
+            <option value="40">40条</option>
+            <option value="80">80条</option>
+            <option value="100">100条</option>
+          </select>
           <span class="page-info-inline" id="admin-invite-page-info"></span>
         </div>
         <div class="table-wrap">
@@ -245,6 +257,12 @@
             <option value="locked">已锁定</option>
           </select>
           <button class="btn btn-secondary btn-sm" onclick="loadUserInvites()">刷新</button>
+          <select id="user-invite-page-size" onchange="userInvitePageSize=parseInt(this.value);userInvitePage=1;loadUserInvites()" style="width:70px;">
+            <option value="20" selected>20条</option>
+            <option value="40">40条</option>
+            <option value="80">80条</option>
+            <option value="100">100条</option>
+          </select>
           <span class="page-info-inline" id="user-invite-page-info"></span>
         </div>
         <div class="table-wrap">
@@ -545,6 +563,7 @@ const API_BASE = window.location.origin + '/api';
 let TOKEN = localStorage.getItem('sync_token');
 let ADMIN_PROFILE = null;
 let userPage = 1, adminInvitePage = 1, userInvitePage = 1, logPage = 1, emailLogPage = 1;
+let userPageSize = 20, adminInvitePageSize = 20, userInvitePageSize = 20;
 
 // ── 工具函数 ──
 function esc(s) {
@@ -742,6 +761,7 @@ async function init() {
   await loadAdminInvites();
   await loadUserInvites();
   await loadLogs();
+  await loadEmailLogs();
   await loadConfig();
 }
 
@@ -770,7 +790,7 @@ async function loadUsers(page) {
   const filter = document.getElementById('user-filter-status').value;
   const sort = document.getElementById('user-sort').value;
 
-  let url = '/admin/users?page=' + userPage + '&page_size=20';
+  let url = '/admin/users?page=' + userPage + '&page_size=' + userPageSize;
   if (search) url += '&search=' + encodeURIComponent(search);
   if (filter) url += '&filter=' + encodeURIComponent(filter);
   if (sort) url += '&sort=' + encodeURIComponent(sort);
@@ -825,7 +845,7 @@ async function loadUsers(page) {
     }).join('');
 
     const total = d.total || users.length;
-    const pages = Math.ceil(total / 20);
+    const pages = Math.ceil(total / userPageSize);
     const currentPage = userPage;
     const onPage = users.length;
     document.getElementById('user-page-info').textContent = '当前页 ' + onPage + ' 个用户，共 ' + total + ' 个用户';
@@ -909,7 +929,7 @@ async function loadAdminInvites(page) {
   const search = document.getElementById('admin-invite-search').value.trim();
   const filter = document.getElementById('admin-invite-filter-used').value;
 
-  let url = '/invite/list?page=' + adminInvitePage + '&page_size=20&created_by=admin';
+  let url = '/invite/list?page=' + adminInvitePage + '&page_size=' + adminInvitePageSize + '&created_by=admin';
   if (search) url += '&search=' + encodeURIComponent(search);
   if (filter) url += '&status=' + encodeURIComponent(filter);
 
@@ -950,7 +970,7 @@ async function loadAdminInvites(page) {
     }).join('');
 
     const total = d.total || codes.length;
-    const pages = Math.ceil(total / 20);
+    const pages = Math.ceil(total / adminInvitePageSize);
     const onPage = codes.length;
     document.getElementById('admin-invite-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
     renderPagination('admin-invite-pagination', pages, adminInvitePage, p => loadAdminInvites(p));
@@ -970,7 +990,7 @@ async function loadUserInvites(page) {
   const search = document.getElementById('user-invite-search').value.trim();
   const filter = document.getElementById('user-invite-filter-used').value;
 
-  let url = '/invite/list?page=' + userInvitePage + '&page_size=20&created_by=user';
+  let url = '/invite/list?page=' + userInvitePage + '&page_size=' + userInvitePageSize + '&created_by=user';
   if (search) url += '&search=' + encodeURIComponent(search);
   if (filter) url += '&status=' + encodeURIComponent(filter);
 
@@ -1011,7 +1031,7 @@ async function loadUserInvites(page) {
     }).join('');
 
     const total = d.total || codes.length;
-    const pages = Math.ceil(total / 20);
+    const pages = Math.ceil(total / userInvitePageSize);
     const onPage = codes.length;
     document.getElementById('user-invite-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
     renderPagination('user-invite-pagination', pages, userInvitePage, p => loadUserInvites(p));
@@ -1713,6 +1733,11 @@ function switchTab(tab) {
       t.classList.add('active');
     }
   });
+  // 懒加载：切换到邮件日志tab时若数据为空则自动加载
+  if (tab === 'email-logs') {
+    const el = document.getElementById('email-log-entries');
+    if (!el.querySelector('.log-entry')) loadEmailLogs();
+  }
 }
 
 // ===================================================================
