@@ -263,8 +263,6 @@
           <div class="dropdown-item" onclick="openEmailModal()">修改邮箱</div>
           <div class="dropdown-item" onclick="openPasswordModal()">修改密码</div>
           <div class="dropdown-divider"></div>
-          <div class="dropdown-item" onclick="openDeleteAccountModal()">注销账户</div>
-          <div class="dropdown-divider"></div>
           <div class="dropdown-item danger" onclick="logout()">退出登录</div>
         </div>
       </div>
@@ -583,99 +581,6 @@
     </div>
   </div>
 </div>
-<!-- ===== 管理员资料弹窗 ===== -->
-<div class="modal-overlay" id="profile-modal">
-  <div class="modal" style="max-width:520px;">
-    <button class="close" onclick="closeModal('profile-modal')">x</button>
-    <h3>修改资料</h3>
-
-    <!-- 头像上传 -->
-    <div class="form-group">
-      <label>头像</label>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
-        <div id="profile-avatar-preview" style="width:48px;height:48px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--primary-cyan);font-weight:600;overflow:hidden;flex-shrink:0;">
-          管
-        </div>
-        <input type="file" id="profile-avatar-file" accept="image/*" style="font-size:12px;flex:1;">
-        <button class="btn btn-primary btn-sm" onclick="updateAvatar()">上传</button>
-      </div>
-    </div>
-
-    <!-- 修改昵称 -->
-    <div class="form-group">
-      <label>昵称</label>
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="profile-nickname" placeholder="输入新昵称" style="flex:1;">
-        <button class="btn btn-primary btn-sm" onclick="saveNickname()">保存</button>
-      </div>
-    </div>
-
-    <!-- 修改邮箱 -->
-    <div class="form-group">
-      <label>邮箱</label>
-      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
-        <span id="profile-email-current" style="font-size:13px;color:var(--text-muted);"></span>
-      </div>
-      <input type="email" id="profile-new-email" placeholder="新邮箱地址" style="margin-bottom:4px;">
-      <input type="password" id="profile-email-password" placeholder="输入密码确认">
-      <button class="btn btn-primary btn-sm" onclick="saveEmail()" style="margin-top:4px;">保存邮箱</button>
-    </div>
-
-    <!-- 修改用户名 -->
-    <div class="form-group">
-      <label>用户名</label>
-      <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
-        <span id="profile-username-current" style="font-size:13px;color:var(--text-muted);"></span>
-      </div>
-      <input type="text" id="profile-new-username" placeholder="新用户名" style="margin-bottom:4px;">
-      <input type="password" id="profile-username-password" placeholder="输入密码确认">
-      <button class="btn btn-primary btn-sm" onclick="saveUsername()" style="margin-top:4px;">保存用户名</button>
-    </div>
-
-    <!-- 修改密码 -->
-    <div class="form-group">
-      <label>修改密码</label>
-      <input type="password" id="profile-old-password" placeholder="当前密码" style="margin-bottom:4px;">
-      <input type="password" id="profile-new-password" placeholder="新密码" style="margin-bottom:4px;">
-      <input type="password" id="profile-confirm-password" placeholder="确认新密码">
-      <button class="btn btn-primary btn-sm" onclick="changePassword()" style="margin-top:4px;">修改密码</button>
-    </div>
-
-    <!-- TOTP 双因素认证 -->
-    <div class="form-group">
-      <label>双因素认证（TOTP）</label>
-      <div id="profile-totp-section">
-        <div id="profile-totp-status" style="font-size:13px;color:var(--text-muted);margin-bottom:6px;"></div>
-        <div id="profile-totp-actions">
-          <button class="btn btn-primary btn-sm" id="profile-totp-setup-btn" onclick="setupTotp()" style="display:none;">开启 TOTP</button>
-          <button class="btn btn-secondary btn-sm" id="profile-totp-reconfig-btn" onclick="reconfigTotp()" style="display:none;">重新配置 TOTP</button>
-          <button class="btn btn-danger btn-sm" id="profile-totp-disable-btn" onclick="disableTotp()" style="display:none;">关闭 TOTP</button>
-        </div>
-        <div id="profile-totp-setup-area" style="display:none;margin-top:8px;">
-          <div id="profile-totp-qrcode" style="text-align:center;margin-bottom:8px;"></div>
-          <div id="profile-totp-secret" style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px;word-break:break-all;"></div>
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="profile-totp-code" placeholder="输入6位验证码" maxlength="6" style="flex:1;">
-            <button class="btn btn-primary btn-sm" onclick="verifyTotpSetup()">验证</button>
-          </div>
-        </div>
-        <div id="profile-totp-disable-area" style="display:none;margin-top:8px;">
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="profile-totp-disable-code" placeholder="输入TOTP验证码" maxlength="6" style="flex:1;">
-            <button class="btn btn-danger btn-sm" onclick="confirmDisableTotp()">确认关闭</button>
-          </div>
-        </div>
-        <div id="profile-totp-recovery" style="display:none;margin-top:8px;padding:10px;background:var(--primary-light);border-radius:var(--radius-sm);">
-          <div style="font-size:13px;font-weight:600;color:var(--primary-deep);margin-bottom:4px;">重要：请保存以下恢复密钥</div>
-          <div id="profile-totp-recovery-keys" style="font-size:12px;color:var(--text-main);word-break:break-all;font-family:monospace;"></div>
-          <button class="btn btn-primary btn-sm" onclick="closeProfileTotpRecovery()" style="margin-top:6px;">我已保存</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
 <!-- ===== 管理员协助绑定 TOTP 弹窗 ===== -->
 <div class="modal-overlay" id="totp-bind-modal">
   <div class="modal" style="max-width:420px;">
@@ -1627,7 +1532,7 @@ async function quickSaveNickname() {
   const nickname = document.getElementById('quick-nickname').value.trim();
   if (!nickname) { toast('请输入昵称', 'error'); return; }
   try {
-    await api('/auth/profile/nickname', { method: 'PUT', body: JSON.stringify({ nickname }) });
+    await api('/auth/profile/nickname', { method: 'PUT', body: JSON.stringify({ new_nickname: nickname }) });
     toast('昵称已更新', 'success');
     document.getElementById('admin-name').textContent = nickname;
     if (ADMIN_PROFILE) ADMIN_PROFILE.nickname = nickname;
@@ -1648,7 +1553,7 @@ async function quickSaveEmail() {
   if (!new_email) { toast('请输入新邮箱', 'error'); return; }
   if (!password) { toast('请输入密码确认', 'error'); return; }
   try {
-    await api('/auth/profile/email', { method: 'PUT', body: JSON.stringify({ new_email, password }) });
+    await api('/auth/profile?new_email=' + encodeURIComponent(new_email), { method: 'PUT' });
     toast('邮箱已更新', 'success');
     document.getElementById('quick-email-current').textContent = '当前: ' + new_email;
     if (ADMIN_PROFILE) ADMIN_PROFILE.email = new_email;
@@ -1670,7 +1575,7 @@ async function quickChangePassword() {
   if (new_password !== confirm) { toast('两次密码不一致', 'error'); return; }
   if (new_password.length < 6) { toast('密码至少6位', 'error'); return; }
   try {
-    const r = await api('/auth/profile/password', { method: 'PUT', body: JSON.stringify({ current_password: old_password, new_password }) });
+    const r = await api('/auth/profile/password', { method: 'PUT', body: JSON.stringify({ old_password, new_password }) });
     if (r.access_token) { TOKEN = r.access_token; localStorage.setItem('sync_token', TOKEN); }
     toast('密码已修改', 'success');
     closeModal('quick-password-modal');
@@ -1701,10 +1606,7 @@ async function quickUploadAvatar() {
   } catch(e) { toast('上传失败: ' + e.message, 'error'); }
 }
 
-function openDeleteAccountModal() {
-  // 跳转到 profile 页面的注销区域
-  window.location.href = '/profile';
-}
+
 
 // 管理员修改用户邮箱
 function adminEditEmail(uid, currentEmail, username) {
@@ -1726,325 +1628,7 @@ async function adminSaveEmail() {
   } catch(e) { toast('更新失败: ' + e.message, 'error'); }
 }
 
-// ===================================================================
-// 管理员自服务 - 资料弹窗 (保留兼容旧入口)
-// ===================================================================
-let _pendingTotpData = null;
 let _pendingTotpBindUserId = null;
-
-function openAdminProfileModal() {
-  // 加载当前资料
-  api('/auth/profile').then(p => {
-    ADMIN_PROFILE = p;
-    document.getElementById('admin-name').textContent = p.nickname || p.username;
-
-    // 头像
-    const area = document.getElementById('profile-avatar-preview');
-    const firstChar = (p.nickname || p.username || '管').charAt(0).toUpperCase();
-    fetch(API_BASE + '/auth/profile/avatar/image', {
-      headers: { 'Authorization': 'Bearer ' + TOKEN },
-    }).then(r => {
-      if (r.ok) {
-        r.blob().then(blob => {
-          const url = URL.createObjectURL(blob);
-          area.innerHTML = '<img src="' + url + '" alt="头像" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">';
-        });
-      } else {
-        area.textContent = firstChar;
-      }
-    }).catch(() => { area.textContent = firstChar; });
-
-    // 昵称
-    document.getElementById('profile-nickname').value = p.nickname || '';
-
-    // 邮箱
-    document.getElementById('profile-email-current').textContent = p.email ? '当前: ' + p.email : '未设置邮箱';
-    document.getElementById('profile-new-email').value = '';
-
-    // 用户名
-    document.getElementById('profile-username-current').textContent = '当前: ' + p.username;
-
-    // TOTP
-    updateProfileTotpUI(p.totp_enabled);
-
-    // 清空密码/验证码输入
-    document.getElementById('profile-old-password').value = '';
-    document.getElementById('profile-new-password').value = '';
-    document.getElementById('profile-confirm-password').value = '';
-    document.getElementById('profile-email-password').value = '';
-    document.getElementById('profile-username-password').value = '';
-    document.getElementById('profile-totp-code').value = '';
-    document.getElementById('profile-totp-disable-code').value = '';
-
-    showModal('profile-modal');
-  }).catch(e => {
-    toast('加载个人资料失败: ' + e.message, 'error');
-  });
-}
-
-function updateProfileTotpUI(enabled) {
-  document.getElementById('profile-totp-setup-area').style.display = 'none';
-  document.getElementById('profile-totp-disable-area').style.display = 'none';
-  document.getElementById('profile-totp-recovery').style.display = 'none';
-  _pendingTotpData = null;
-
-  if (enabled) {
-    document.getElementById('profile-totp-status').textContent = '已开启';
-    document.getElementById('profile-totp-setup-btn').style.display = 'none';
-    document.getElementById('profile-totp-reconfig-btn').style.display = '';
-    document.getElementById('profile-totp-disable-btn').style.display = '';
-  } else {
-    document.getElementById('profile-totp-status').textContent = '未开启';
-    document.getElementById('profile-totp-setup-btn').style.display = '';
-    document.getElementById('profile-totp-reconfig-btn').style.display = 'none';
-    document.getElementById('profile-totp-disable-btn').style.display = 'none';
-  }
-}
-
-// ── 头像裁剪压缩 ──
-function _cropAndCompressAvatar(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = function() {
-      const SIZE = 280;
-      const canvas = document.createElement('canvas');
-      canvas.width = SIZE; canvas.height = SIZE;
-      const ctx = canvas.getContext('2d');
-      // 居中裁剪正方形
-      const min = Math.min(img.width, img.height);
-      const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
-      ctx.drawImage(img, sx, sy, min, min, 0, 0, SIZE, SIZE);
-      // 圆形遮罩
-      ctx.globalCompositeOperation = 'destination-in';
-      ctx.beginPath();
-      ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
-      ctx.fill();
-      canvas.toBlob(function(blob) {
-        if (blob) resolve(blob);
-        else reject(new Error('裁剪失败'));
-      }, 'image/png', 0.85);
-    };
-    img.onerror = function() { reject(new Error('图片加载失败')); };
-    img.src = URL.createObjectURL(file);
-  });
-}
-
-// ── 头像上传 ──
-async function updateAvatar() {
-  const fileInput = document.getElementById('profile-avatar-file');
-  const file = fileInput.files[0];
-  if (!file) { toast('请选择头像文件', 'error'); return; }
-  try {
-    // 裁剪压缩后上传
-    const blob = await _cropAndCompressAvatar(file);
-    const formData = new FormData();
-    formData.append('file', blob, 'avatar.png');
-    const r = await fetch(API_BASE + '/auth/profile/avatar', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + TOKEN },
-      body: formData,
-    });
-    if (!r.ok) {
-      let detail = '上传失败';
-      try { const d = await r.json(); if (d.detail) detail = d.detail; } catch(e) {}
-      throw new Error(detail);
-    }
-    toast('头像上传成功', 'success');
-    // 更新预览（用裁剪后的 blob）
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const area = document.getElementById('profile-avatar-preview');
-      area.innerHTML = '<img src="' + e.target.result + '" alt="头像" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">';
-    };
-    reader.readAsDataURL(blob);
-    // 刷新下拉菜单头像
-    loadAvatar(ADMIN_PROFILE ? ADMIN_PROFILE.username : null);
-    fileInput.value = '';
-  } catch (e) {
-    toast('头像上传失败: ' + e.message, 'error');
-  }
-}
-
-// ── 修改昵称 ──
-async function saveNickname() {
-  const nickname = document.getElementById('profile-nickname').value.trim();
-  if (!nickname) { toast('请输入昵称', 'error'); return; }
-  try {
-    await api('/auth/profile/nickname', {
-      method: 'PUT',
-      body: JSON.stringify({ nickname: nickname }),
-    });
-    toast('昵称已更新', 'success');
-    // 更新顶栏
-    document.getElementById('admin-name').textContent = nickname;
-    if (ADMIN_PROFILE) ADMIN_PROFILE.nickname = nickname;
-  } catch (e) {
-    toast('更新昵称失败: ' + e.message, 'error');
-  }
-}
-
-// ── 修改邮箱 ──
-async function saveEmail() {
-  const new_email = document.getElementById('profile-new-email').value.trim();
-  const password = document.getElementById('profile-email-password').value;
-  if (!new_email) { toast('请输入新邮箱地址', 'error'); return; }
-  if (!password) { toast('请输入密码确认', 'error'); return; }
-  try {
-    await api('/auth/profile/email', {
-      method: 'PUT',
-      body: JSON.stringify({ new_email: new_email, password: password }),
-    });
-    toast('邮箱已更新', 'success');
-    document.getElementById('profile-email-current').textContent = '当前: ' + new_email;
-    document.getElementById('profile-new-email').value = '';
-    document.getElementById('profile-email-password').value = '';
-    if (ADMIN_PROFILE) ADMIN_PROFILE.email = new_email;
-  } catch (e) {
-    toast('更新邮箱失败: ' + e.message, 'error');
-  }
-}
-
-// ── 修改用户名 ──
-async function saveUsername() {
-  const new_username = document.getElementById('profile-new-username').value.trim();
-  const password = document.getElementById('profile-username-password').value;
-  if (!new_username) { toast('请输入新用户名', 'error'); return; }
-  if (!password) { toast('请输入密码确认', 'error'); return; }
-  try {
-    const r = await api('/auth/profile/username', {
-      method: 'PUT',
-      body: JSON.stringify({ new_username: new_username, password: password }),
-    });
-    // token 重签
-    if (r.access_token) {
-      TOKEN = r.access_token;
-      localStorage.setItem('sync_token', TOKEN);
-    }
-    toast('用户名已更新，请重新登录', 'success');
-    if (ADMIN_PROFILE) ADMIN_PROFILE.username = new_username;
-    document.getElementById('profile-username-current').textContent = '当前: ' + new_username;
-    document.getElementById('profile-new-username').value = '';
-    document.getElementById('profile-username-password').value = '';
-    // 刷新头像显示
-    loadAvatar(new_username);
-  } catch (e) {
-    toast('更新用户名失败: ' + e.message, 'error');
-  }
-}
-
-// ── 修改密码 ──
-async function changePassword() {
-  const old_password = document.getElementById('profile-old-password').value;
-  const new_password = document.getElementById('profile-new-password').value;
-  const confirm_password = document.getElementById('profile-confirm-password').value;
-  if (!old_password) { toast('请输入当前密码', 'error'); return; }
-  if (!new_password) { toast('请输入新密码', 'error'); return; }
-  if (new_password !== confirm_password) { toast('两次输入的新密码不一致', 'error'); return; }
-  if (new_password.length < 6) { toast('新密码长度不能少于6位', 'error'); return; }
-  try {
-    const r = await api('/auth/profile/password', {
-      method: 'PUT',
-      body: JSON.stringify({ old_password: old_password, new_password: new_password }),
-    });
-    if (r.access_token) {
-      TOKEN = r.access_token;
-      localStorage.setItem('sync_token', TOKEN);
-    }
-    toast('密码已修改，请重新登录', 'success');
-    document.getElementById('profile-old-password').value = '';
-    document.getElementById('profile-new-password').value = '';
-    document.getElementById('profile-confirm-password').value = '';
-  } catch (e) {
-    toast('修改密码失败: ' + e.message, 'error');
-  }
-}
-
-// ── TOTP 开启 ──
-async function setupTotp() {
-  try {
-    const data = await api('/auth/totp/setup', { method: 'POST' });
-    _pendingTotpData = data;
-    // 显示二维码
-    const qrArea = document.getElementById('profile-totp-qrcode');
-    if (data.qrcode_b64) {
-      qrArea.innerHTML = '<img src="data:image/png;base64,' + data.qrcode_b64 + '" alt="TOTP 二维码" style="max-width:160px;">';
-    } else {
-      qrArea.innerHTML = '';
-    }
-    // 显示密钥
-    document.getElementById('profile-totp-secret').textContent = '密钥: ' + (data.secret || '');
-    document.getElementById('profile-totp-setup-area').style.display = 'block';
-    document.getElementById('profile-totp-code').value = '';
-    document.getElementById('profile-totp-setup-btn').disabled = true;
-    document.getElementById('profile-totp-reconfig-btn').disabled = true;
-    document.getElementById('profile-totp-disable-btn').disabled = true;
-  } catch (e) {
-    toast('获取 TOTP 配置失败: ' + e.message, 'error');
-  }
-}
-
-async function reconfigTotp() {
-  await setupTotp();
-}
-
-async function verifyTotpSetup() {
-  const code = document.getElementById('profile-totp-code').value.trim();
-  if (!code || code.length !== 6) { toast('请输入6位验证码', 'error'); return; }
-  try {
-    const r = await api('/auth/totp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ code: code }),
-    });
-    // 显示 Recovery Key
-    if (r.recovery_keys && r.recovery_keys.length) {
-      document.getElementById('profile-totp-recovery-keys').textContent = r.recovery_keys.join('  ');
-      document.getElementById('profile-totp-recovery').style.display = 'block';
-    } else if (r.recovery_key) {
-      document.getElementById('profile-totp-recovery-keys').textContent = r.recovery_key;
-      document.getElementById('profile-totp-recovery').style.display = 'block';
-    }
-    document.getElementById('profile-totp-setup-area').style.display = 'none';
-    toast('TOTP 已开启', 'success');
-    updateProfileTotpUI(true);
-    document.getElementById('profile-totp-setup-btn').disabled = false;
-    document.getElementById('profile-totp-reconfig-btn').disabled = false;
-    document.getElementById('profile-totp-disable-btn').disabled = false;
-  } catch (e) {
-    toast('验证失败: ' + e.message, 'error');
-  }
-}
-
-function closeProfileTotpRecovery() {
-  document.getElementById('profile-totp-recovery').style.display = 'none';
-  _pendingTotpData = null;
-}
-
-// ── TOTP 关闭 ──
-function disableTotp() {
-  document.getElementById('profile-totp-disable-area').style.display = 'block';
-  document.getElementById('profile-totp-setup-btn').disabled = true;
-  document.getElementById('profile-totp-reconfig-btn').disabled = true;
-  document.getElementById('profile-totp-disable-btn').disabled = true;
-}
-
-async function confirmDisableTotp() {
-  const code = document.getElementById('profile-totp-disable-code').value.trim();
-  if (!code || code.length !== 6) { toast('请输入6位验证码', 'error'); return; }
-  try {
-    await api('/auth/totp/disable', {
-      method: 'POST',
-      body: JSON.stringify({ code: code }),
-    });
-    toast('TOTP 已关闭', 'success');
-    updateProfileTotpUI(false);
-    document.getElementById('profile-totp-disable-area').style.display = 'none';
-    document.getElementById('profile-totp-setup-btn').disabled = false;
-    document.getElementById('profile-totp-reconfig-btn').disabled = false;
-    document.getElementById('profile-totp-disable-btn').disabled = false;
-  } catch (e) {
-    toast('关闭 TOTP 失败: ' + e.message, 'error');
-  }
-}
 
 // ===================================================================
 // 管理员协助用户绑定 TOTP
