@@ -1,12 +1,12 @@
 """
 安全服务
 
-包含 JWT 签发/验证、密码哈希、登录锁定、IP 封禁、限流等。
+包含 JWT 签发/验证、密码哈希、登录锁定、IP 封禁、限流、RBAC 角色鉴权等。
 """
 
 import datetime
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -26,6 +26,18 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ── JWT Bearer 认证 ──
 bearer_scheme = HTTPBearer(auto_error=False)
 
+# ── 角色层级 ──
+ROLE_HIERARCHY = {
+    "primary_admin": 3,
+    "secondary_admin": 2,
+    "read_only_admin": 1,
+    "user": 0,
+}
+
+def is_admin_role(role: str) -> bool:
+    """判断是否为管理员角色（含所有层级）"""
+    return ROLE_HIERARCHY.get(role, 0) > 0
+
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -37,7 +49,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 # ── JWT ──
 
-def create_access_token(user_id: int, username: str, is_admin: bool = False) -> str:
+def create_access_token(user_id: int, username: str, is_admin: bool = False, role: str = "user") -> str:
     """签发 JWT Token"""
     expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
         minutes=settings.JWT_EXPIRE_MINUTES
@@ -45,7 +57,8 @@ def create_access_token(user_id: int, username: str, is_admin: bool = False) -> 
     payload = {
         "sub": str(user_id),
         "username": username,
-        "admin": is_admin,
+        "is_admin": is_admin,
+        "role": role,
         "exp": expire,
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
@@ -133,10 +146,28 @@ async def get_current_user(
 
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    """要求当前用户是管理员"""
-    if not current_user.is_admin:
+    """要求当前用户是管理员（兼容旧接口，等效于 require_min_role('read_only_admin')）"""
+    if not current_user.is_admin and not is_admin_role(current_user.role):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要管理员权限",
         )
     return current_user
+
+
+def require_min_role(min_role: str):
+    """要求当前用户至少具有指定角色层级
+
+    用法:
+        @router.get("/sensitive", dependencies=[Depends(require_min_role("primary_admin"))])
+    """
+    async def checker(current_user: User = Depends(get_current_user)) -> User:
+        user_level = ROLE_HIERARCHY.get(current_user.role, 0)
+        required_level = ROLE_HIERARCHY.get(min_role, 0)
+        if user_level < required_level:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"需要 {min_role} 或更高权限",
+            )
+        return current_user
+    return checker

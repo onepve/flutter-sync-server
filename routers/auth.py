@@ -213,7 +213,7 @@ async def login(req: LoginRequest, request: Request, db: Session = Depends(get_d
     user.last_login_ip = request.client.host
     db.commit()
 
-    token = create_access_token(user.id, user.username, user.is_admin)
+    token = create_access_token(user.id, user.username, user.is_admin, user.role)
 
     _log_audit(db, user.id, "login", "登录成功",
                request.client.host, request.url.path, True, username=user.username)
@@ -225,6 +225,7 @@ async def login(req: LoginRequest, request: Request, db: Session = Depends(get_d
         username=user.username,
         nickname=user.nickname,
         avatar_url=user.avatar_url,
+        role=user.role,
     )
 
 
@@ -322,14 +323,14 @@ async def recovery_login(
     user.last_login_ip = request.client.host
     db.commit()
 
-    token = create_access_token(user.id, user.username, user.is_admin)
+    token = create_access_token(user.id, user.username, user.is_admin, user.role)
 
-    _log_audit(db, user.id, "recovery_login", "使用 Recovery Key 登录成功",
+    _log_audit(db, user.id, "recovery_login", "Recovery Key 登录成功",
                request.client.host, request.url.path, True, username=user.username)
 
     return LoginResponse(access_token=token, user_id=user.id, uuid=user.uuid,
                          username=user.username, nickname=user.nickname,
-                         avatar_url=user.avatar_url)
+                         avatar_url=user.avatar_url, role=user.role)
 
 
 @router.get("/profile", response_model=UserProfileResponse)

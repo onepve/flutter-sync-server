@@ -349,7 +349,6 @@
   <span class="title">个人资料</span>
   <div class="topbar-right">
     <a href="/admin" id="topbar-admin" style="display:none;">管理</a>
-    <a href="/doc">API 文档</a>
     <a href="#" id="topbar-logout" onclick="logout()" style="color:var(--btn-danger);display:none;">退出</a>
   </div>
 </div>
@@ -424,20 +423,9 @@
             <div class="pf-text" id="p-username">—</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">修改</button>
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('username')">修改</button>
           </div>
         </div>
-        <div class="profile-field">
-          <div class="pf-label">邮箱</div>
-          </div>
-        </div>
-        <div class="inline-edit" id="edit-username">
-          <input type="text" id="edit-username-input" placeholder="新用户名">
-          <button class="btn btn-sm btn-primary" onclick="saveUsername()">保存</button>
-          <button class="btn btn-sm btn-secondary" onclick="hideEdit('username')">取消</button>
-          <div class="status-inline" id="status-username"></div>
-        </div>
-
         <!-- 昵称 -->
         <div class="profile-field">
           <div class="pf-label">昵称</div>
@@ -445,18 +433,15 @@
             <div class="pf-text" id="p-nickname">—</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-primary" onclick="openEditModal()">编辑资料</button>
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('nickname')">修改</button>
           </div>
         </div>
-        <div class="inline-edit" id="edit-nickname"></div>
-
-        <!-- 邮箱 -->
-        <div class="profile-field">
-          <div class="pf-label">邮箱</div>
         <div class="inline-edit" id="edit-nickname">
           <input type="text" id="edit-nickname-input" placeholder="新昵称">
-          <button class="btn btn-sm btn-primary" onclick="saveNickname()">保存</button>
-          <button class="btn btn-sm btn-secondary" onclick="hideEdit('nickname')">取消</button>
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-primary" onclick="saveNickname()">保存</button>
+            <button class="btn btn-sm btn-secondary" onclick="hideEdit('nickname')">取消</button>
+          </div>
           <div class="status-inline" id="status-nickname"></div>
         </div>
 
@@ -468,20 +453,25 @@
             <div class="pf-sub" id="p-email-status"></div>
           </div>
           <div class="pf-actions" id="email-actions">
-            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">编辑</button>
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('email')">修改</button>
             <button class="btn btn-sm btn-success" id="btn-verify-email" style="display:none;" onclick="sendEmailVerification()">验证</button>
           </div>
         </div>
         <div class="inline-edit" id="edit-email">
           <input type="email" id="edit-email-input" placeholder="新邮箱">
-          <button class="btn btn-sm btn-primary" onclick="saveEmail()">保存</button>
-          <button class="btn btn-sm btn-secondary" onclick="hideEdit('email')">取消</button>
+          <input type="password" id="edit-email-password" placeholder="输入密码确认" style="margin-top:4px;">
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-primary" onclick="saveEmail()">保存</button>
+            <button class="btn btn-sm btn-secondary" onclick="hideEdit('email')">取消</button>
+          </div>
           <div class="status-inline" id="status-email"></div>
         </div>
-        <div class="inline-edit" id="verify-email">
+        <div class="inline-edit" id="edit-verify">
           <input type="text" id="verify-code-input" placeholder="验证码" maxlength="6">
-          <button class="btn btn-sm btn-primary" onclick="verifyEmail()">确认</button>
-          <button class="btn btn-sm btn-secondary" onclick="hideEdit('verify')">取消</button>
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-primary" onclick="verifyEmail()">确认</button>
+            <button class="btn btn-sm btn-secondary" onclick="hideEdit('verify')">取消</button>
+          </div>
           <div class="status-inline" id="status-verify"></div>
         </div>
 
@@ -498,7 +488,7 @@
             <div class="pf-text">••••••••</div>
           </div>
           <div class="pf-actions">
-            <button class="btn btn-sm btn-secondary" onclick="openEditModal()">编辑</button>
+            <button class="btn btn-sm btn-secondary" onclick="showEdit('password')">修改</button>
           </div>
         </div>
         <div class="inline-edit" id="edit-password">

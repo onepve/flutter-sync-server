@@ -68,6 +68,7 @@ class AdminUserResponse(BaseModel):
     totp_enabled: bool
     is_active: bool
     is_admin: bool
+    role: str = "user"
     display_order: Optional[int] = None
     created_at: datetime
     last_login_at: Optional[datetime]

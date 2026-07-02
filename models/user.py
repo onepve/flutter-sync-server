@@ -45,6 +45,13 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # ── 角色（替代 is_admin 的升级） ──
+    # primary_admin: 主管理员（全部权限）
+    # secondary_admin: 副管理员（不能删用户/改设置）
+    # read_only_admin: 只读管理员（仅查看）
+    # user: 普通用户
+    role: Mapped[str] = mapped_column(String(32), default="user", nullable=False)
+
     # 审计
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False

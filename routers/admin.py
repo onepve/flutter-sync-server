@@ -30,6 +30,8 @@ from schemas.admin_schema import (
 )
 from services.security import (
     require_admin,
+    require_min_role,
+    is_admin_role,
 )
 from models.system_config import SystemConfig
 from services.totp import TOTPService
@@ -183,12 +185,12 @@ async def lock_user(req: AdminLockRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/user/delete", dependencies=ADMIN_DEPENDS)
-async def delete_user(req: AdminDeleteUserRequest, current_user: User = Depends(require_admin), db: Session = Depends(get_db)):
-    """删除用户（管理员强制删除，支持邮件备份）"""
+async def delete_user(req: AdminDeleteUserRequest, current_user: User = Depends(require_min_role("primary_admin")), db: Session = Depends(get_db)):
+    """删除用户（仅主管理员，支持邮件备份）"""
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
-    if user.is_admin:
+    if user.is_admin or is_admin_role(user.role):
         raise HTTPException(status_code=400, detail="不能删除管理员")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="不能删除自己")
@@ -519,9 +521,10 @@ async def get_admin_config(db: Session = Depends(get_db)):
 async def update_admin_config(
     req: AdminConfigUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_min_role("primary_admin")),
     request: Request = None,
 ):
-    """更新系统配置（管理员）"""
+    """更新系统配置（仅主管理员）"""
     if req.require_invite_for_registration is not None:
         _set_config_value(db, "require_invite_for_registration", str(req.require_invite_for_registration).lower())
     if req.allow_user_create_invite is not None:

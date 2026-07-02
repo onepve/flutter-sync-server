@@ -47,6 +47,7 @@ class LoginResponse(BaseModel):
     username: str
     nickname: Optional[str] = None
     avatar_url: Optional[str] = None
+    role: str = "user"
     totp_required: bool = False
 
 
@@ -88,6 +89,8 @@ class UserProfileResponse(BaseModel):
     email_verified: bool
     totp_enabled: bool
     is_active: bool
+    is_admin: bool
+    role: str = "user"
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -917,14 +917,22 @@ async function loadAvatar(username) {
 
 // ── 初始化 ──
 async function init() {
-  showMain();
+  // 管理员权限检查
   try {
-    ADMIN_PROFILE = await api('/auth/profile');
+    const profile = await api('/auth/profile');
+    if (!profile.is_admin) {
+      window.location.href = '/profile';
+      return;
+    }
+    ADMIN_PROFILE = profile;
     document.getElementById('admin-name').textContent = ADMIN_PROFILE.nickname || ADMIN_PROFILE.username;
     loadAvatar(ADMIN_PROFILE.username);
   } catch (e) {
-    toast('加载个人信息失败', 'error');
+    toast('权限验证失败', 'error');
+    window.location.href = '/profile';
+    return;
   }
+  showMain();
   await loadStats();
   await loadUsers();
   await loadAdminInvites();

@@ -94,6 +94,17 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 logger.warning(f"迁移 invite_codes 失败: {e}")
 
+            # ── 迁移：给 users 表加 role 列 ──
+            if "role" not in existing_cols:
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'user'"
+                ))
+                # 将现有管理员标记为 primary_admin
+                conn.execute(text(
+                    "UPDATE users SET role = 'primary_admin' WHERE is_admin = 1"
+                ))
+                logger.info("迁移: 新增 users.role 列，现有管理员已设为 primary_admin")
+
             conn.commit()
 
             # 清理：旧文件头像已丢失，清空其 avatar_url
@@ -129,6 +140,7 @@ async def lifespan(app: FastAPI):
                 password_hash=hash_password(settings.ADMIN_PASSWORD),
                 email_verified=True,
                 is_admin=True,
+                role="primary_admin",
                 is_active=True,
             )
             _db.add(_admin)
@@ -225,3 +237,7 @@ async def public_invites_page():
 @app.get("/my-invites", response_class=FileResponse)
 async def user_invites_page():
     return FileResponse(os.path.join(_static_dir, "my-invites.html"), media_type="text/html")
+
+@app.get("/login", response_class=FileResponse)
+async def login_page():
+    return FileResponse(os.path.join(_static_dir, "login.html"), media_type="text/html")
