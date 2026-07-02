@@ -3,6 +3,8 @@
 import logging
 import datetime
 import json
+
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, and_, asc, desc
