@@ -124,6 +124,104 @@
 }
 .theme-select:hover { border-color: var(--primary); }
 .theme-select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+
+/* ═══════════════════════════════════════════════
+   手机端 / 移动端响应式适配
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── 顶栏 ── */
+  .topbar { padding: 0 12px; min-height: 48px; gap: 4px; flex-wrap: wrap; }
+  .topbar .title { font-size: 13px; display: none; }
+  .topbar a { font-size: 11px; padding: 6px 8px; }
+  .topbar .topbar-right { gap: 4px; }
+  .theme-select { font-size: 11px; padding: 3px 5px; }
+  .topbar .avatar-btn { padding: 2px 6px; }
+  .topbar .avatar-btn img,
+  .topbar .avatar-btn .avatar-placeholder { width: 24px; height: 24px; }
+
+  /* ── 页面容器 ── */
+  .page-wrap { padding: 12px 8px 0; }
+
+  /* ── 标签页横向滚动 ── */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; gap: 2px; padding: 4px 0; }
+  .tab { font-size: 11px; padding: 6px 10px; white-space: nowrap; flex-shrink: 0; }
+
+  /* ── 搜索栏 ── */
+  .search-bar-adv { gap: 4px; }
+  .search-bar-adv input { max-width: none; flex: 1 1 100%; min-width: 100px; }
+  .search-bar-adv select { max-width: none; flex: 1 1 auto; min-width: 80px; }
+  .search-bar-adv button { font-size: 10px; padding: 4px 8px; }
+
+  /* ── 表格 ── */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -8px; padding: 0 8px; }
+  .table-wrap table { font-size: 11px; min-width: 600px; }
+  .table-wrap th, .table-wrap td { padding: 6px 4px; white-space: nowrap; }
+
+  /* 用户表格：手机隐藏 ID 列和创建者ID列 */
+  #tab-users table th:nth-child(1),
+  #tab-users table td:nth-child(1),
+  #tab-invite-logs table th:nth-child(1),
+  #tab-invite-logs table td:nth-child(1),
+  #tab-invite-logs table th:nth-child(5),
+  #tab-invite-logs table td:nth-child(5) { display: none; }
+
+  /* 用户表格：邮箱列允许换行 */
+  #tab-users table td:nth-child(4) { white-space: normal; word-break: break-all; max-width: 120px; }
+  /* 昵称列允许换行 */
+  #tab-users table td:nth-child(3) { white-space: normal; word-break: break-all; max-width: 80px; }
+  /* 用户名列 */
+  #tab-users table td:nth-child(2) { white-space: normal; word-break: break-all; max-width: 80px; }
+
+  /* 邀请码列允许换行 */
+  .invite-code-text { font-size: 10px; padding: 1px 4px; }
+
+  /* ── 操作按钮组 ── */
+  .action-group { gap: 2px; flex-wrap: wrap; }
+  .action-group button { font-size: 9px; padding: 2px 5px; }
+
+  /* ── 分页 ── */
+  .pagination { gap: 2px; flex-wrap: wrap; justify-content: center; }
+  .pagination button { font-size: 10px; padding: 4px 8px; min-width: 28px; }
+  .page-info-inline { font-size: 10px; white-space: normal; }
+
+  /* ── 日志条目 ── */
+  .log-entry { flex-direction: column; gap: 2px; padding: 6px 8px; }
+  .log-entry .log-time { min-width: auto; font-size: 10px; }
+  .log-entry .log-user { min-width: auto; font-size: 11px; }
+  .log-entry .log-action { font-size: 11px; }
+
+  /* ── 系统设置 ── */
+  .setting-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 8px; }
+  .setting-control { margin-left: 0; }
+
+  /* ── 弹窗 ── */
+  .modal { max-width: 95vw !important; padding: 16px; }
+  .modal-box { max-width: 95vw !important; padding: 16px; }
+
+  /* ── 登录页 ── */
+  .login-screen .login-box { padding: 24px 16px; max-width: 95vw; }
+
+  /* ── 统计卡片 ── */
+  .stats-grid-adm { gap: 6px; }
+  .stat-adm { padding: 12px 8px; }
+  .stat-adm .num { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  /* ── 顶栏：隐藏首页链接文字，只留图标 ── */
+  .topbar a[href="/"] { font-size: 0; }
+  .topbar a[href="/"]::before { content: '←'; font-size: 14px; }
+  .topbar .title { display: none; }
+
+  /* ── tabs 更紧凑 ── */
+  .tab { font-size: 10px; padding: 5px 7px; }
+
+  /* ── 用户表格：更多列隐藏 ── */
+  #tab-users table th:nth-child(6),
+  #tab-users table td:nth-child(6) { display: none; }  /* TOTP */
+  #tab-users table th:nth-child(7),
+  #tab-users table td:nth-child(7) { display: none; }  /* 状态（已用badge替代） */
+}
 </style>
 </head>
 <body>
@@ -195,6 +293,7 @@
         <div class="tab" onclick="switchTab('settings')">系统设置</div>
         <div class="tab" onclick="switchTab('logs')">审计日志</div>
         <div class="tab" onclick="switchTab('email-logs')">邮件日志</div>
+        <div class="tab" onclick="switchTab('invite-logs')">邀请码日志</div>
       </div>
 
       <!-- ─── Tab: 用户管理 ─── -->
@@ -364,6 +463,25 @@
         </div>
         <div id="email-log-entries"></div>
         <div class="pagination" id="email-log-pagination"></div>
+      </div>
+
+      <!-- ─── Tab: 邀请码日志 ─── -->
+      <div class="tab-content" id="tab-invite-logs">
+        <div class="search-bar-adv">
+          <input type="text" id="invite-log-search" placeholder="搜索邀请码或用户名..." onkeydown="if(event.key==='Enter')loadInviteLogs()">
+          <button class="btn btn-primary btn-sm" onclick="loadInviteLogs()">查询</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadInviteLogs()">刷新</button>
+          <span class="page-info-inline" id="invite-log-page-info"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>ID</th><th>邀请码</th><th>使用者</th><th>使用邮箱</th><th>创建者ID</th><th>使用时间</th>
+            </tr></thead>
+            <tbody id="invite-log-table-body"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="invite-log-pagination"></div>
       </div>
     </div>
 
@@ -708,7 +826,7 @@ initTheme();
 const API_BASE = window.location.origin + '/api';
 let TOKEN = localStorage.getItem('sync_token');
 let ADMIN_PROFILE = null;
-let userPage = 1, adminInvitePage = 1, userInvitePage = 1, logPage = 1, emailLogPage = 1;
+let userPage = 1, adminInvitePage = 1, userInvitePage = 1, logPage = 1, emailLogPage = 1, inviteLogPage = 1;
 let userPageSize = 20, adminInvitePageSize = 20, userInvitePageSize = 20;
 
 // ── 工具函数 ──
@@ -1457,6 +1575,47 @@ async function clearEmailLogs() {
 }
 
 // ===================================================================
+// 邀请码使用日志
+// ===================================================================
+async function loadInviteLogs(page) {
+  if (page !== undefined) inviteLogPage = page;
+  const tbody = document.getElementById('invite-log-table-body');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">加载中...</td></tr>';
+
+  const search = document.getElementById('invite-log-search').value.trim();
+  let url = '/admin/invite-usage-logs?page=' + inviteLogPage + '&page_size=30';
+  if (search) url += '&search=' + encodeURIComponent(search);
+
+  try {
+    const d = await api(url);
+    const logs = d.logs || [];
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">暂无邀请码使用记录</td></tr>';
+      document.getElementById('invite-log-pagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => {
+      return '<tr>' +
+        '<td>' + l.id + '</td>' +
+        '<td><span class="invite-code-text">' + esc(l.invite_code) + '</span></td>' +
+        '<td>' + esc(l.used_by_username || '已删除用户#' + (l.used_by_user_id || '?')) + '</td>' +
+        '<td>' + esc(l.used_by_email || '--') + '</td>' +
+        '<td>' + (l.created_by || '--') + '</td>' +
+        '<td>' + dateStr(l.created_at) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    const total = d.total || logs.length;
+    const pages = Math.ceil(total / 30);
+    const onPage = logs.length;
+    document.getElementById('invite-log-page-info').textContent = '当前页 ' + onPage + ' 条，共 ' + total + ' 条';
+    renderPagination('invite-log-pagination', pages, inviteLogPage, p => loadInviteLogs(p));
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--btn-danger);">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+// ===================================================================
 // 快速编辑弹窗函数（拆分入口）
 // ===================================================================
 function openNicknameModal() {
@@ -2000,6 +2159,11 @@ function switchTab(tab) {
   if (tab === 'logs') {
     const el = document.getElementById('log-entries');
     if (!el.querySelector('.log-entry')) loadLogs();
+  }
+  // 懒加载：切换到邀请码日志tab时若数据为空则自动加载
+  if (tab === 'invite-logs') {
+    const el = document.getElementById('invite-log-table-body');
+    if (!el.querySelector('tr:not(:first-child)') || el.querySelector('td[colspan]')) loadInviteLogs();
   }
 }
 

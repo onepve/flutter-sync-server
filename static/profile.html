@@ -300,6 +300,45 @@
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
 }
+
+/* ═══════════════════════════════════════════════
+   手机端 / 移动端响应式适配
+   ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .container { padding: 0 12px; }
+  .topbar { padding: 0 12px; min-height: 44px; }
+  .topbar .title { font-size: 14px; }
+  .topbar a { font-size: 12px; padding: 4px 8px; }
+  
+  /* 头像缩小 */
+  .profile-avatar-wrap img,
+  .profile-avatar-wrap .avatar-placeholder { width: 72px; height: 72px; }
+
+  /* 字段信息：label + value 堆叠 */
+  .profile-field { flex-wrap: wrap; gap: 4px; }
+  .profile-field .pf-label { width: 100%; padding-top: 0; }
+  .profile-field .pf-value { flex: 1 1 100%; }
+  .profile-field .pf-text { word-break: break-all; font-size: 13px; }
+  .profile-field .pf-actions { margin-left: auto; margin-top: 4px; }
+
+  /* 卡片内边距 */
+  .card { padding: 16px; }
+  .section-title { font-size: 13px; padding: 6px 10px; }
+
+  /* 弹窗 */
+  .modal-box { max-width: 95vw !important; padding: 16px; }
+  .modal-box h3 { font-size: 15px; }
+
+  /* 注销弹窗按钮 */
+  .form-actions { flex-direction: column; }
+  .form-actions .btn { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .topbar .title { font-size: 12px; }
+  .topbar a[href="/"] { font-size: 0; }
+  .topbar a[href="/"]::before { content: '←'; font-size: 14px; }
+}
 </style>
 </head>
 <body>

@@ -12,6 +12,7 @@ from database import get_db
 from models.user import User
 from models.encrypted_data import EncryptedData
 from models.invite_code import InviteCode
+from models.invite_usage_log import InviteUsageLog
 from models.audit_log import AuditLog
 from models.email_log import EmailLog
 from models.password_reset import PasswordResetToken
@@ -21,6 +22,7 @@ from schemas.admin_schema import (
     AdminTOTPRequest, AdminTOTPBindRequest, AdminUpdateOrderRequest,
     AuditLogResponse, AuditLogListResponse,
     EmailLogResponse, EmailLogListResponse,
+    InviteUsageLogResponse, InviteUsageLogListResponse,
     StatsResponse,
     AdminConfigUpdateRequest, AdminConfigResponse, DEFAULT_SYSTEM_CONFIG,
 )
@@ -501,6 +503,38 @@ async def update_admin_config(
 
     config = _load_config(db)
     return _config_to_response(config)
+
+
+# ── 邀请码使用日志 ──
+
+@router.get("/invite-usage-logs", response_model=InviteUsageLogListResponse, dependencies=ADMIN_DEPENDS)
+async def get_invite_usage_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(30, ge=1, le=200),
+    search: Optional[str] = Query(None, description="搜索邀请码或用户名"),
+    db: Session = Depends(get_db),
+):
+    """查询邀请码使用日志"""
+    q = db.query(InviteUsageLog)
+
+    if search:
+        q = q.filter(
+            or_(
+                InviteUsageLog.invite_code.contains(search),
+                InviteUsageLog.used_by_username.contains(search),
+            )
+        )
+
+    total = q.count()
+    logs = q.order_by(desc(InviteUsageLog.created_at)) \
+            .offset((page - 1) * page_size) \
+            .limit(page_size) \
+            .all()
+
+    return InviteUsageLogListResponse(
+        logs=[InviteUsageLogResponse.model_validate(log) for log in logs],
+        total=total,
+    )
 
 
 # ── 辅助 ──

@@ -13,6 +13,7 @@ from config import settings
 from database import get_db
 from models.user import User
 from models.invite_code import InviteCode
+from models.invite_usage_log import InviteUsageLog
 from models.encrypted_data import EncryptedData
 from models.audit_log import AuditLog
 from models.system_config import SystemConfig
@@ -95,9 +96,16 @@ async def register(req: RegisterRequest, request: Request, db: Session = Depends
     db.add(user)
     db.flush()
 
-    # 4. 更新邀请码使用次数
+    # 4. 更新邀请码使用次数并记录使用日志
     if require_invite:
         invite.used_count += 1
+        db.add(InviteUsageLog(
+            invite_code=invite.code,
+            used_by_user_id=user.id,
+            used_by_username=user.username,
+            used_by_email=user.email,
+            created_by=invite.created_by,
+        ))
 
     # 5. 发送邮箱验证码（如果 SMTP 已配置）
     if email_service.enabled:

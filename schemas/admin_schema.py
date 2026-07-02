@@ -179,3 +179,23 @@ class AdminConfigResponse(BaseModel):
     require_invite_for_registration: bool = True
     allow_user_create_invite: bool = False
     max_invites_per_user: int = 5
+
+
+# ── 邀请码使用日志 ──
+
+class InviteUsageLogResponse(BaseModel):
+    id: int
+    invite_code: str
+    used_by_user_id: Optional[int] = None
+    used_by_username: Optional[str] = None
+    used_by_email: Optional[str] = None
+    created_by: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InviteUsageLogListResponse(BaseModel):
+    logs: list[InviteUsageLogResponse]
+    total: int
