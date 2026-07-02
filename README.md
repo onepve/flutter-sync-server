@@ -1,12 +1,3 @@
-
-> 📝 **本文档由 AI 生成**  
-> **生成工具**：Hermes Agent (Nous Research)  
-> **模型**：deepseek-v4-pro  
-> **最后更新**：2026-07-02  
-> **源码仓库**：[onepve/flutter-sync-server](https://github.com/onepve/flutter-sync-server)
-
----
-
 # CBox 同步服务端 — 完整技术规格书
 
 > **目的**：本文档描述了 CBox 同步服务端（FastAPI + MySQL）的完整技术实现。  
@@ -71,10 +62,10 @@ Docker（推荐）或裸机 uvicorn
 ### 1.4 域名与端口
 
 ```
-服务域名：your-domain.com
+服务域名：sync.onepve.com
 服务端口：8765（network_mode: host，绑定宿主机）
-邮箱发件人：no_reply@your-domain.com
-SMTP：smtp.your-provider.com:465（隐式 SSL）
+邮箱发件人：no_reply@info.onepve.com
+SMTP：阿里云邮件推送 smtpdm.aliyun.com:465（隐式 SSL）
 ```
 
 ---
@@ -132,7 +123,7 @@ flutter-sync-server/
 │   ├── auth.py                # 认证：注册/登录/TOTP/Recovery Key/密码重置/注销/头像
 │   ├── sync.py                # 数据同步：上传/下载/diff/状态/删除/导出到邮箱
 │   ├── invite.py              # 邀请码：CRUD/批量/锁定/重置/删除/用户自创/公开列表/CSV
-│   └── admin.py               # 管理后台：统计/用户管理/审计日志/邮件日志/系统配置
+│   └── admin.py               # 管理后台：统计/用户管理/审计日志/邮件日志/系统配置/邀请码日志
 │
 ├── models/                    # SQLAlchemy 数据模型（7 个）
 │   ├── user.py                # 用户
@@ -156,7 +147,7 @@ flutter-sync-server/
 │
 └── static/                    # 前端静态页面（7 个 HTML）
     ├── index.html             # 首页
-    ├── admin.html             # 管理后台（6 标签页 SPA）
+    ├── admin.html             # 管理后台（7 标签页 SPA，含管理员个人资料入口）
     ├── profile.html           # 个人资料（带头像裁剪）
     ├── invite.html            # 邀请码管理
     ├── public-invites.html    # 公开邀请码浏览
@@ -358,11 +349,11 @@ ENC_SALT=sync-server-salt-change-me
 TOTP_ISSUER=FlutterServerBox                      # 显示在 TOTP App 中的发行方名称
 
 # ========== SMTP（可选，不配则跳过所有邮件）==========
-SMTP_HOST=smtp.your-provider.com
+SMTP_HOST=smtpdm.aliyun.com
 SMTP_PORT=465
 SMTP_USER=your_aliyun_smtp_user
 SMTP_PASSWORD=your_aliyun_smtp_password
-SMTP_FROM=no_reply@your-domain.com
+SMTP_FROM=no_reply@info.onepve.com
 SMTP_STARTTLS=true
 SMTP_USE_TLS=true                                 # 端口 465 隐式 SSL
 
@@ -377,7 +368,7 @@ RATE_LIMIT_SYNC=30/minute
 
 # ========== 管理员账号（首次启动从 .env 读取创建）==========
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123456789
+ADMIN_PASSWORD=Admin@123
 
 # ========== 服务 ==========
 SERVER_HOST=0.0.0.0
@@ -405,7 +396,7 @@ SERVER_PORT=8765
 | LOGIN_MAX_ATTEMPTS | 5 | ❌ | 登录失败锁定阈值 |
 | LOGIN_LOCK_MINUTES | 15 | ❌ | 锁定时长（分钟） |
 | ADMIN_USERNAME | admin | ❌ | 管理员用户名 |
-| ADMIN_PASSWORD | admin123456789 | ✅ | 管理员密码，安装后务必修改 |
+| ADMIN_PASSWORD | — | ✅ | 管理员密码 |
 | TOTP_ISSUER | FlutterServerBox | ❌ | TOTP 显示名称 |
 
 ---
@@ -1513,7 +1504,34 @@ else:
 
 ---
 
-#### 6.4.7 用户排序 `PUT /api/admin/user/order`
+#### 6.4.7 管理员修改用户资料 `PUT /api/admin/user/profile`
+
+```
+认证：🔒
+
+请求体：
+{
+    "user_id": 5,
+    "email":   "newemail@example.com"
+}
+
+200 { "message": "用户资料已更新" }
+
+400 { "detail": "用户不存在" }
+400 { "detail": "邮箱已被使用" }
+```
+
+**服务端内部**：
+```
+1. 查用户 → 不存在 404
+2. 新邮箱查重（排除当前用户）
+3. 更新 email → email_verified = False（需重新验证）
+4. 审计日志：action="admin_update_profile"
+```
+
+---
+
+#### 6.4.8 用户排序 `PUT /api/admin/user/order`
 
 ```
 请求体：
@@ -1530,7 +1548,7 @@ else:
 
 ---
 
-#### 6.4.8 审计日志列表 `GET /api/admin/logs`
+#### 6.4.9 审计日志列表 `GET /api/admin/logs`
 
 ```
 查询参数：
@@ -1563,7 +1581,7 @@ else:
 
 ---
 
-#### 6.4.9 清空审计日志 `DELETE /api/admin/logs/clear`
+#### 6.4.10 清空审计日志 `DELETE /api/admin/logs/clear`
 
 ```
 200 { "message": "已清空 5000 条审计日志" }
@@ -1571,7 +1589,7 @@ else:
 
 ---
 
-#### 6.4.10 邮件日志列表 `GET /api/admin/email-logs`
+#### 6.4.11 邮件日志列表 `GET /api/admin/email-logs`
 
 ```
 查询参数：
@@ -1598,7 +1616,7 @@ else:
 
 ---
 
-#### 6.4.11 清空邮件日志 `DELETE /api/admin/email-logs/clear`
+#### 6.4.12 清空邮件日志 `DELETE /api/admin/email-logs/clear`
 
 ```
 200 { "message": "已清空 200 条邮件日志" }
@@ -1606,7 +1624,7 @@ else:
 
 ---
 
-#### 6.4.12 获取系统配置 `GET /api/admin/config`
+#### 6.4.13 获取系统配置 `GET /api/admin/config`
 
 ```
 认证：🔒
@@ -1620,7 +1638,7 @@ else:
 
 ---
 
-#### 6.4.13 更新系统配置 `PUT /api/admin/config`
+#### 6.4.14 更新系统配置 `PUT /api/admin/config`
 
 ```
 认证：🔒
@@ -1633,6 +1651,35 @@ else:
 }
 
 200 { 同 GET 响应 }
+```
+
+---
+
+#### 6.4.15 邀请码使用日志 `GET /api/admin/invite-usage-logs`
+
+```
+认证：🔒
+
+查询参数：
+  page=1
+  page_size=30       每页条数
+  search=abc         搜索（邀请码或使用者用户名）
+
+200 {
+    "logs": [
+        {
+            "id":               1,
+            "invite_code":      "a1b2c3...",
+            "used_by_user_id":  5,
+            "used_by_username": "john_doe",
+            "used_by_email":    "john@example.com",
+            "created_by":       1,
+            "created_at":       "2026-01-15T12:00:00"
+        },
+        ...
+    ],
+    "total": 100
+}
 ```
 
 ---
@@ -1822,6 +1869,8 @@ else:
     → server_version(5) > client_version(2)? → 是
     → 409 "服务端版本(5)高于客户端(2)，请先下载"
     → 客户端应先下载最新版，合并后重新上传
+
+> **客户端新装优化（v1.0.1502+）**：重装/新安装客户端时，_doDbMigrate() 会写入默认配置并产生时间戳，导致空客户端的 `lastModTime` 远大于云端旧数据的时间戳，触发了情况 C → 客户端误走「上传」分支覆盖云端数据。现已修复：`SyncEngine.syncAll()` 在 diff 之前先检测本地 Server/Key/Snippet 是否全为空，全空则跳过 diff 直接 download，从根本上避免了此问题。详见客户端规格书 §6.5。
 ```
 
 ### 7.4 邀请码状态机
@@ -2060,18 +2109,50 @@ SMTP_USE_TLS=false:
 | `/my-invites` | user-invites.html | 我的邀请码 | JWT |
 | `/doc` | doc.html | 文档 | ❌ |
 
-### 10.2 管理后台 6 标签页
+### 10.2 管理后台 7 标签页
 
 | 标签 | 调用的 API | 功能 |
 |------|-----------|------|
-| 用户列表 | `GET /api/admin/users` | 搜索/排序/过滤/锁定/删除/TOTP 协助 |
-| 管理员邀请码 | `GET /api/invite/list` | 创建/批量/锁定/删除/重置/公开开关/CSV |
+| 用户列表 | `GET /api/admin/users` | 搜索/排序/过滤/锁定/删除/TOTP 协助/修改邮箱 |
+| 管理员邀请码 | `GET /api/invite/list` | 创建/批量/锁定/删除/重置/公开开关 |
 | 普通用户邀请码 | `GET /api/invite/list` + filter | 同上（按角色筛选） |
 | 系统设置 | `GET/PUT /api/admin/config` | 注册邀请码开关、用户自创邀请码、最大数量 |
 | 审计日志 | `GET /api/admin/logs` | 搜索/过滤/清空 |
 | 邮件日志 | `GET /api/admin/email-logs` | 查看/清空 |
+| 邀请码日志 | `GET /api/admin/invite-usage-logs` | 查看邀请码使用记录，按邀请码或用户名搜索 |
 
-### 10.3 静态文件部署
+### 10.3 管理员个人资料入口
+
+admin.html 顶栏右侧有管理员头像下拉菜单，包含 4 个小弹窗：
+
+| 弹窗 | 调用的 API | 功能 |
+|------|-----------|------|
+| 修改头像 | `POST /api/auth/profile/avatar` | 选择图片文件上传（≤5MB） |
+| 修改昵称 | `PUT /api/auth/profile/nickname` | 直接修改管理员自己的昵称 |
+| 修改邮箱 | `PUT /api/auth/profile?new_email=...` | 密码确认后修改邮箱 |
+| 修改密码 | `PUT /api/auth/profile/password` | 三字段（旧密码/新密码/确认） |
+
+### 10.4 皮肤切换（主题选择器）
+
+所有页面（admin.html、profile.html、index.html 等）共享 `theme.css` 样式表，使用 Glassmorphism 设计语言。
+
+**三模式主题**：
+| 模式 | 说明 |
+|------|------|
+| ☀ 白天 | 浅色 Glassmorphism，半透明白底 |
+| 🌙 黑夜 | 深色模式，深蓝黑底配毛玻璃效果 |
+| 🖥 自动 | 跟随操作系统设置自动切换 |
+
+**设计特征**：
+- 毛玻璃卡片（`backdrop-filter: blur(20px)`）
+- 顶部渐变边框装饰（`card::before` 渐变条）
+- 按钮渐变背景（primary 按钮有蓝紫渐变）
+- 拨动开关（toggle switch）用于二态设置
+- 响应式设计，手机端适配（表格横向滚动、隐藏次要列、紧凑按钮）
+
+主题选择使用 `<select>` 下拉框，切换通过 `setAttribute('data-theme', mode)` 改变 CSS 变量，偏好存储在 `localStorage`。
+
+### 10.5 静态文件部署
 
 ```
 Docker volume 挂载（只读）：
@@ -2164,7 +2245,7 @@ docker compose --profile with-db up -d
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name your-domain.com;
+    server_name sync.onepve.com;
 
     ssl_certificate     /path/to/fullchain.pem;
     ssl_certificate_key /path/to/privkey.pem;
@@ -2182,15 +2263,20 @@ server {
 
 ### 11.6 首次启动后的管理员创建
 
-`main.py` 启动时自动检查 `.env` 中的 `ADMIN_USERNAME` / `ADMIN_PASSWORD`，
-若对应用户尚不存在则自动创建（密码自动 bcrypt 哈希）。
+`.env` 中的 `ADMIN_USERNAME` 和 `ADMIN_PASSWORD` 目前仅在配置中定义。首次管理员需要通过以下方式创建：
 
-也可以通过 `install.sh` 交互安装，Step 5 提供两种选择：
+```bash
+# 方式 1：直接修改数据库
+docker exec -it sync-mysql mysql -u sync_user -p sync_server
+INSERT INTO users (uuid, username, email, password_hash, email_verified, is_admin, is_active)
+VALUES (UUID(), 'admin', 'admin@onepve.com',
+        '$2b$12$...预生成的 bcrypt 哈希...',
+        TRUE, TRUE, TRUE);
 
-1. **使用默认管理员** — `admin` / `admin123456789`（安装后务必尽快修改密码）
-2. **自行创建** — 交互输入自定义用户名和密码并确认
-
-`init.sql` 中已预置默认管理员 INSERT（含默认头像），`WHERE NOT EXISTS` 幂等保护。
+# 方式 2：通过 API 注册后手动提升
+# 先正常注册一个用户 → 然后手动设 is_admin=1
+UPDATE users SET is_admin=1 WHERE username='admin';
+```
 
 ---
 
